@@ -47,12 +47,15 @@ func validateArgs() bool {
 		fmt.Println()
 		fmt.Println(boldCyan("Usage:"))
 		fmt.Println("  dump_dir <file_extension> <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ...")
+		fmt.Println("  Use 'any' as file_extension to match all files")
 		fmt.Println()
 		fmt.Println(boldGreen("Example:"))
 		fmt.Println("  dump_dir js ./project -s ./project/node_modules -s ./project/dist")
+		fmt.Println("  dump_dir any ./project -s ./project/node_modules")
 		fmt.Println()
 		fmt.Println(boldMagenta("Description:"))
-		fmt.Println("  This will search for all .js files in ./project, excluding the node_modules and dist directories.")
+		fmt.Println("  This will search for files with the specified extension (or all files if 'any' is used)")
+		fmt.Println("  in the given directories, excluding any specified directories.")
 		fmt.Println()
 		return false
 	}
@@ -113,7 +116,7 @@ func processDirectory(dir, extension string, skipDirs []string) ([]string, strin
 			}
 			return nil
 		}
-		if strings.HasSuffix(info.Name(), "."+extension) {
+		if extension == "any" || strings.HasSuffix(info.Name(), "."+extension) {
 			fileInfo, err := processFile(path)
 			if err != nil {
 				return err
