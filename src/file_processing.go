@@ -10,11 +10,17 @@ import (
 )
 
 type FileProcessor struct {
-	Config Config
+	Config        Config
+	IgnoreManager *IgnoreManager
 }
 
 func NewFileProcessor(config Config) *FileProcessor {
-	return &FileProcessor{Config: config}
+	fp := &FileProcessor{Config: config}
+	err := UpdateFileProcessor(fp)
+	if err != nil {
+		fmt.Printf(boldRed("❌ Error initializing IgnoreManager: %v\n"), err)
+	}
+	return fp
 }
 
 func (fp *FileProcessor) ProcessDirectories() []FileInfo {
@@ -52,6 +58,10 @@ func (fp *FileProcessor) findAllDirectories() []string {
 			}
 
 			if info.IsDir() {
+				if fp.IgnoreManager.ShouldIgnore(path) {
+					fmt.Printf("Skipping ignored directory: %s\n", path)
+					return filepath.SkipDir
+				}
 				for _, skipDir := range fp.Config.SkipDirs {
 					if strings.HasPrefix(path, skipDir) {
 						fmt.Printf("Skipping directory: %s\n", path)
@@ -82,8 +92,11 @@ func (fp *FileProcessor) findMatchingFiles(dirs []string) []string {
 		}
 
 		for _, file := range files {
-			if !file.IsDir() && fp.matchesExtensions(file.Name()) {
-				matchingFiles = append(matchingFiles, filepath.Join(dir, file.Name()))
+			if !file.IsDir() {
+				filePath := filepath.Join(dir, file.Name())
+				if !fp.IgnoreManager.ShouldIgnore(filePath) && fp.matchesExtensions(file.Name()) {
+					matchingFiles = append(matchingFiles, filePath)
+				}
 			}
 		}
 	}

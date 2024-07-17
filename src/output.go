@@ -8,11 +8,11 @@ import (
 
 func GenerateSummary(processedFiles []FileInfo, totalLines int) string {
 	var summary strings.Builder
-	summary.WriteString(boldMagenta("🔍 Matching files:\n"))
+	summary.WriteString(boldMagenta("\n🔍 Matching files:\n"))
 	for _, file := range processedFiles {
 		summary.WriteString(fmt.Sprintf("  - %s\n", file.Path))
 	}
-	summary.WriteString(boldCyan(fmt.Sprintf("📚 Total files found: %d\n", len(processedFiles))))
+	summary.WriteString(boldCyan(fmt.Sprintf("\n📚 Total files found: %d\n", len(processedFiles))))
 	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all files: %d\n\n", totalLines)))
 	return summary.String()
 }
