@@ -3,20 +3,19 @@ package src
 import (
 	"bufio"
 	"fmt"
-	"github.com/gobwas/glob"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func ProcessDirectories(extension string, directories, skipDirs []string, ignorePatterns []glob.Glob, includeGitIgnored bool) ([]string, string, int) {
+func ProcessDirectories(extension string, directories, skipDirs []string) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
 
 	for _, dir := range directories {
-		files, output, lines := processDirectory(dir, extension, skipDirs, ignorePatterns, includeGitIgnored)
+		files, output, lines := processDirectory(dir, extension, skipDirs)
 		matchingFiles = append(matchingFiles, files...)
 		detailedOutput.WriteString(output)
 		totalLines += lines
@@ -25,7 +24,7 @@ func ProcessDirectories(extension string, directories, skipDirs []string, ignore
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func processDirectory(dir, extension string, skipDirs []string, ignorePatterns []glob.Glob, includeGitIgnored bool) ([]string, string, int) {
+func processDirectory(dir, extension string, skipDirs []string) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
@@ -34,22 +33,6 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 		if err != nil {
 			fmt.Printf(boldRed("❌ Error accessing path %s: %v\n"), path, err)
 			return nil // Continue walking despite the error
-		}
-
-		relPath, err := filepath.Rel(dir, path)
-		if err != nil {
-			fmt.Printf(boldRed("❌ Error getting relative path for %s: %v\n"), path, err)
-			return nil
-		}
-
-		// Check if the path should be ignored
-		if !includeGitIgnored && shouldIgnore(relPath, ignorePatterns) {
-			if info.IsDir() {
-				fmt.Printf("Ignoring directory: %s\n", path)
-				return filepath.SkipDir
-			}
-			fmt.Printf("Ignoring file: %s\n", path)
-			return nil
 		}
 
 		if info.IsDir() {
@@ -80,15 +63,6 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 	}
 
 	return matchingFiles, detailedOutput.String(), totalLines
-}
-
-func shouldIgnore(relPath string, ignorePatterns []glob.Glob) bool {
-	for _, pattern := range ignorePatterns {
-		if pattern.Match(relPath) {
-			return true
-		}
-	}
-	return false
 }
 
 func processFile(path string) (FileInfo, error) {

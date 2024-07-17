@@ -12,20 +12,15 @@ func ValidateArgs() bool {
 	return true
 }
 
-func ParseArgs(args []string) (string, []string, []string, bool) {
+func ParseArgs(args []string) (string, []string, []string) {
 	extension := args[0]
 	var directories []string
 	var skipDirs []string
 	skipMode := false
-	includeGitIgnored := false
 
 	for _, arg := range args[1:] {
 		if arg == "-s" {
 			skipMode = true
-			continue
-		}
-		if arg == "--include-gitignored-paths" {
-			includeGitIgnored = true
 			continue
 		}
 		if skipMode {
@@ -36,5 +31,5 @@ func ParseArgs(args []string) (string, []string, []string, bool) {
 		}
 	}
 
-	return extension, directories, skipDirs, includeGitIgnored
+	return extension, directories, skipDirs
 }
