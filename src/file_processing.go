@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ProcessDirectories(extension string, directories, skipDirs []string, specificFiles []string) ([]string, string, int) {
+func ProcessDirectories(extensions []string, directories, skipDirs []string, specificFiles []string) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
@@ -28,7 +28,7 @@ func ProcessDirectories(extension string, directories, skipDirs []string, specif
 
 	// Process directories
 	for _, dir := range directories {
-		files, output, lines := processDirectory(dir, extension, skipDirs, specificFiles)
+		files, output, lines := processDirectory(dir, extensions, skipDirs, specificFiles)
 		matchingFiles = append(matchingFiles, files...)
 		detailedOutput.WriteString(output)
 		totalLines += lines
@@ -37,7 +37,7 @@ func ProcessDirectories(extension string, directories, skipDirs []string, specif
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func processDirectory(dir, extension string, skipDirs, specificFiles []string) ([]string, string, int) {
+func processDirectory(dir string, extensions []string, skipDirs, specificFiles []string) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
@@ -65,7 +65,7 @@ func processDirectory(dir, extension string, skipDirs, specificFiles []string) (
 			}
 		}
 
-		if extension == "any" || strings.HasSuffix(info.Name(), "."+extension) {
+		if matchesExtensions(info.Name(), extensions) {
 			fileInfo, err := processFile(path)
 			if err != nil {
 				fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), path, err)
@@ -83,6 +83,18 @@ func processDirectory(dir, extension string, skipDirs, specificFiles []string) (
 	}
 
 	return matchingFiles, detailedOutput.String(), totalLines
+}
+
+func matchesExtensions(filename string, extensions []string) bool {
+	if len(extensions) == 1 && extensions[0] == "any" {
+		return true
+	}
+	for _, ext := range extensions {
+		if strings.HasSuffix(filename, "."+ext) {
+			return true
+		}
+	}
+	return false
 }
 
 func processFile(path string) (FileInfo, error) {

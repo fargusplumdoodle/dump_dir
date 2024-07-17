@@ -33,10 +33,16 @@ Get all files in your project directory of all types
 dump_dir any ./project 
 ```
 
+Get all Go, JavaScript, and Python files in your project:
+```bash
+dump_dir go,js,py ./project
+````
+
 This repo:
 ```txt
-dump_dir go .
+dump_dir go . ./README.md
 🔍 Matching files:
+  - README.md
   - main.go
   - src/args.go
   - src/colors.go

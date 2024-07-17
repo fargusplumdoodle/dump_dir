@@ -3,6 +3,7 @@ package src
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func ValidateArgs() bool {
@@ -13,8 +14,8 @@ func ValidateArgs() bool {
 	return true
 }
 
-func ParseArgs(args []string) (string, []string, []string, []string) {
-	extension := args[0]
+func ParseArgs(args []string) ([]string, []string, []string, []string) {
+	extensions := strings.Split(args[0], ",")
 	var directories []string
 	var skipDirs []string
 	var specificFiles []string
@@ -41,5 +42,5 @@ func ParseArgs(args []string) (string, []string, []string, []string) {
 		}
 	}
 
-	return extension, directories, skipDirs, specificFiles
+	return extensions, directories, skipDirs, specificFiles
 }
