@@ -7,7 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
+
+const FilesPerGoroutine = 1
 
 type FileProcessor struct {
 	Config        Config
@@ -33,14 +36,44 @@ func (fp *FileProcessor) ProcessDirectories() []FileInfo {
 	// Add specifically mentioned files
 	filesToProcess = append(filesToProcess, fp.Config.SpecificFiles...)
 
-	// Step 3: Process all found files
-	var processedFiles []FileInfo
-	for _, file := range filesToProcess {
-		fileInfo, err := processFile(file)
-		if err != nil {
-			fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
-			continue
+	// Step 3: Process all found files in parallel
+	return fp.processFilesParallel(filesToProcess)
+}
+
+func (fp *FileProcessor) processFilesParallel(files []string) []FileInfo {
+	var wg sync.WaitGroup
+	fileInfoChan := make(chan FileInfo, len(files))
+
+	// Process files in chunks
+	for i := 0; i < len(files); i += FilesPerGoroutine {
+		end := i + FilesPerGoroutine
+		if end > len(files) {
+			end = len(files)
 		}
+
+		wg.Add(1)
+		go func(chunk []string) {
+			defer wg.Done()
+			for _, file := range chunk {
+				fileInfo, err := processFile(file)
+				if err != nil {
+					fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
+					continue
+				}
+				fileInfoChan <- fileInfo
+			}
+		}(files[i:end])
+	}
+
+	// Close the channel when all goroutines are done
+	go func() {
+		wg.Wait()
+		close(fileInfoChan)
+	}()
+
+	// Collect results
+	var processedFiles []FileInfo
+	for fileInfo := range fileInfoChan {
 		processedFiles = append(processedFiles, fileInfo)
 	}
 
@@ -143,7 +176,7 @@ func processFile(path string) (FileInfo, error) {
 
 	var contents strings.Builder
 	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024) // Increase buffer size
+	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024)
 
 	for scanner.Scan() {
 		contents.WriteString(scanner.Text() + "\n")
