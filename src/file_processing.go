@@ -36,27 +36,30 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 			return nil // Continue walking despite the error
 		}
 
-		// Ignore .git directory unless --include-gitignored-paths is used
-		if !includeGitIgnored && info.IsDir() && info.Name() == ".git" {
-			return filepath.SkipDir
+		relPath, err := filepath.Rel(dir, path)
+		if err != nil {
+			fmt.Printf(boldRed("❌ Error getting relative path for %s: %v\n"), path, err)
+			return nil
+		}
+
+		// Check if the path should be ignored
+		if !includeGitIgnored && shouldIgnore(relPath, ignorePatterns) {
+			if info.IsDir() {
+				fmt.Printf("Ignoring directory: %s\n", path)
+				return filepath.SkipDir
+			}
+			fmt.Printf("Ignoring file: %s\n", path)
+			return nil
 		}
 
 		if info.IsDir() {
 			for _, skipDir := range skipDirs {
 				if strings.HasPrefix(path, skipDir) {
+					fmt.Printf("Skipping directory: %s\n", path)
 					return filepath.SkipDir
 				}
 			}
 			return nil
-		}
-
-		relPath, _ := filepath.Rel(dir, path)
-		if !includeGitIgnored {
-			for _, pattern := range ignorePatterns {
-				if pattern.Match(relPath) {
-					return nil
-				}
-			}
 		}
 
 		if extension == "any" || strings.HasSuffix(info.Name(), "."+extension) {
@@ -77,6 +80,15 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 	}
 
 	return matchingFiles, detailedOutput.String(), totalLines
+}
+
+func shouldIgnore(relPath string, ignorePatterns []glob.Glob) bool {
+	for _, pattern := range ignorePatterns {
+		if pattern.Match(relPath) {
+			return true
+		}
+	}
+	return false
 }
 
 func processFile(path string) (FileInfo, error) {
