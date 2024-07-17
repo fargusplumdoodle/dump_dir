@@ -77,5 +77,5 @@ func PrintUsage() {
 }
 
 func PrintError(errorType string, filePath string, err error) {
-	fmt.Printf("❌ Error %s file %s: %v\n", errorType, filePath, err)
+	fmt.Printf(boldRed("❌ Error %s file %s: %v\n", errorType, filePath, err))
 }

@@ -11,7 +11,7 @@ import (
 )
 
 const FilesPerGoroutine = 1
-const MaxFileSize = 10 * 1024 * 1024 // 10 MB
+const MaxFileSize = 10 * 1024 // 1 MB
 
 type FileProcessor struct {
 	Config        Config
