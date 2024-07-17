@@ -1,6 +1,6 @@
 # 🚀 dump_dir 📂✨
 
-Copy a bunch of files into your clipboard to provide context for LLms
+Copy a bunch of files into your clipboard to provide context for LLMs
 
 ## 🌟 Functionality
 
@@ -43,17 +43,29 @@ dump_dir any ./project --include-ignored
 
 This repo:
 ```txt
-dump_dir go . ./README.md
+dump_dir any .
+Skipping ignored directory: .git
+Skipping ignored directory: .idea
+Skipping ignored directory: gitignore
+
 🔍 Matching files:
-  - README.md
-  - main.go
-  - src/args.go
+  - dump_dir
   - src/colors.go
+  - README.md
+  - .gitignore
+  - main.go
+  - go.mod
+  - src/ignore.go
   - src/file_processing.go
   - src/output.go
+  - go.sum
+  - .goreleaser.yaml
   - src/types.go
-📚 Total files found: 6
-📝 Total lines across all files: 260
+  - src/args.go
+  - .github/workflows/release.yml
+
+📚 Total files found: 14
+📝 Total lines across all files: 710
 
 ✅ File contents have been copied to clipboard.
 ```
@@ -65,7 +77,7 @@ Files and directories listed in your project's .gitignore will not be included i
 The tool also respects your global gitignore file.
 Common version control directories (like .git) are automatically ignored.
 
-To include ignored files, use the --include-ignored flag as shown in the examples above.
+To include ignored files, use the `--include-ignored` flag as shown in the examples above.
 
 ## 🛠️ Installation
 
