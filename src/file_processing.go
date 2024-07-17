@@ -7,89 +7,144 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
-func ProcessDirectories(extensions []string, directories, skipDirs []string, specificFiles []string) ([]string, string, int) {
-	var matchingFiles []string
-	var detailedOutput strings.Builder
-	var totalLines int
+const FilesPerGoroutine = 1
+const MaxFileSize = 10 * 1024 // 1 MB
 
-	// Process specific files first
-	for _, file := range specificFiles {
-		fileInfo, err := processFile(file)
-		if err != nil {
-			fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
-			continue
-		}
-		matchingFiles = append(matchingFiles, fileInfo.Path)
-		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
-		totalLines += strings.Count(fileInfo.Contents, "\n")
-	}
-
-	// Process directories
-	for _, dir := range directories {
-		files, output, lines := processDirectory(dir, extensions, skipDirs, specificFiles)
-		matchingFiles = append(matchingFiles, files...)
-		detailedOutput.WriteString(output)
-		totalLines += lines
-	}
-
-	return matchingFiles, detailedOutput.String(), totalLines
+type FileProcessor struct {
+	Config        Config
+	IgnoreManager *IgnoreManager
 }
 
-func processDirectory(dir string, extensions []string, skipDirs, specificFiles []string) ([]string, string, int) {
-	var matchingFiles []string
-	var detailedOutput strings.Builder
-	var totalLines int
+func NewFileProcessor(config Config) *FileProcessor {
+	fp := &FileProcessor{Config: config}
+	err := UpdateFileProcessor(fp)
+	if err != nil {
+		fmt.Printf(boldRed("❌ Error initializing IgnoreManager: %v\n"), err)
+	}
+	return fp
+}
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			fmt.Printf(boldRed("❌ Error accessing path %s: %v\n"), path, err)
-			return nil // Continue walking despite the error
+func (fp *FileProcessor) ProcessDirectories() []FileInfo {
+	// Step 1: Find all directories and subdirectories
+	allDirs := fp.findAllDirectories()
+
+	// Step 2: Find all matching files in subdirectories
+	filesToProcess := fp.findMatchingFiles(allDirs)
+
+	// Add specifically mentioned files
+	filesToProcess = append(filesToProcess, fp.Config.SpecificFiles...)
+
+	// Step 3: Process all found files in parallel
+	return fp.processFilesParallel(filesToProcess)
+}
+
+func (fp *FileProcessor) processFilesParallel(files []string) []FileInfo {
+	var wg sync.WaitGroup
+	fileInfoChan := make(chan FileInfo, len(files))
+
+	// Process files in chunks
+	for i := 0; i < len(files); i += FilesPerGoroutine {
+		end := i + FilesPerGoroutine
+		if end > len(files) {
+			end = len(files)
 		}
 
-		if info.IsDir() {
-			for _, skipDir := range skipDirs {
-				if strings.HasPrefix(path, skipDir) {
-					fmt.Printf("Skipping directory: %s\n", path)
+		wg.Add(1)
+		go func(chunk []string) {
+			defer wg.Done()
+			for _, file := range chunk {
+				fileInfo, err := processFile(file)
+				if err != nil {
+					PrintError("processing", file, err)
+					continue
+				}
+				fileInfoChan <- fileInfo
+			}
+		}(files[i:end])
+	}
+
+	// Close the channel when all goroutines are done
+	go func() {
+		wg.Wait()
+		close(fileInfoChan)
+	}()
+
+	// Collect results
+	var processedFiles []FileInfo
+	for fileInfo := range fileInfoChan {
+		processedFiles = append(processedFiles, fileInfo)
+	}
+
+	return processedFiles
+}
+
+func (fp *FileProcessor) findAllDirectories() []string {
+	var allDirs []string
+
+	for _, dir := range fp.Config.Directories {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				PrintError("accessing path", path, err)
+				return nil
+			}
+
+			if info.IsDir() {
+				if !fp.Config.IncludeIgnored && fp.IgnoreManager.ShouldIgnore(path) {
+					fmt.Printf("Skipping ignored directory: %s\n", path)
 					return filepath.SkipDir
 				}
+				for _, skipDir := range fp.Config.SkipDirs {
+					if strings.HasPrefix(path, skipDir) {
+						fmt.Printf("Skipping directory: %s\n", path)
+						return filepath.SkipDir
+					}
+				}
+				allDirs = append(allDirs, path)
 			}
 			return nil
-		}
+		})
 
-		// Check if the file is in the specificFiles list
-		for _, specificFile := range specificFiles {
-			if path == specificFile {
-				return nil // Skip processing here as it's already been processed
-			}
+		if err != nil {
+			fmt.Printf(boldRed("❌ Error walking directory %s: %v\n"), dir, err)
 		}
-
-		if matchesExtensions(info.Name(), extensions) {
-			fileInfo, err := processFile(path)
-			if err != nil {
-				fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), path, err)
-				return nil // Continue walking despite the error
-			}
-			matchingFiles = append(matchingFiles, fileInfo.Path)
-			detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
-			totalLines += strings.Count(fileInfo.Contents, "\n")
-		}
-		return nil
-	})
-
-	if err != nil {
-		fmt.Printf(boldRed("❌ Error walking directory %s: %v\n"), dir, err)
 	}
 
-	return matchingFiles, detailedOutput.String(), totalLines
+	return allDirs
 }
 
-func matchesExtensions(filename string, extensions []string) bool {
-	if len(extensions) == 1 && extensions[0] == "any" {
+func (fp *FileProcessor) findMatchingFiles(dirs []string) []string {
+	var matchingFiles []string
+
+	for _, dir := range dirs {
+		files, err := os.ReadDir(dir)
+		if err != nil {
+			PrintError("reading directory", dir, err)
+			continue
+		}
+
+		for _, file := range files {
+			if !file.IsDir() {
+				filePath := filepath.Join(dir, file.Name())
+				if fp.Config.IncludeIgnored || !fp.IgnoreManager.ShouldIgnore(filePath) {
+					if fp.matchesExtensions(file.Name()) {
+						matchingFiles = append(matchingFiles, filePath)
+					}
+				}
+			}
+		}
+	}
+
+	return matchingFiles
+}
+
+func (fp *FileProcessor) matchesExtensions(filename string) bool {
+	if len(fp.Config.Extensions) == 1 && fp.Config.Extensions[0] == "any" {
 		return true
 	}
-	for _, ext := range extensions {
+	for _, ext := range fp.Config.Extensions {
 		if strings.HasSuffix(filename, "."+ext) {
 			return true
 		}
@@ -100,51 +155,64 @@ func matchesExtensions(filename string, extensions []string) bool {
 func processFile(path string) (FileInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return FileInfo{}, fmt.Errorf("error opening file: %w", err)
+		return FileInfo{}, fmt.Errorf("opening file: %w", err)
 	}
 	defer file.Close()
 
 	// Check if the file is empty
-	if info, err := file.Stat(); err != nil {
-		return FileInfo{}, fmt.Errorf("error getting file info: %w", err)
-	} else if info.Size() == 0 {
+	info, err := file.Stat()
+	if err != nil {
+		return FileInfo{}, fmt.Errorf("getting file info: %w", err)
+	}
+	if info.Size() == 0 {
 		return FileInfo{Path: path, Contents: "<EMPTY FILE>"}, nil
 	}
 
-	// Read the first 512 bytes to check if it's a binary file
-	buffer := make([]byte, 512)
-	bytesRead, err := file.Read(buffer)
-	if err != nil && err != io.EOF {
-		return FileInfo{}, fmt.Errorf("error reading file: %w", err)
-	}
-
-	// Reset the file pointer to the beginning
-	_, err = file.Seek(0, 0)
-	if err != nil {
-		return FileInfo{}, fmt.Errorf("error seeking file: %w", err)
+	// Check if the file size exceeds the maximum allowed size
+	if info.Size() > MaxFileSize {
+		return FileInfo{Path: path, Contents: fmt.Sprintf("<FILE TOO LARGE: %d bytes>", info.Size())}, nil
 	}
 
 	// Check if the file is binary
-	if isBinary(buffer[:bytesRead]) {
+	isBinary, err := fileIsBinary(file)
+	if err != nil {
+		return FileInfo{}, fmt.Errorf("checking if file is binary: %w", err)
+	}
+	if isBinary {
 		return FileInfo{Path: path, Contents: "<BINARY SKIPPED>"}, nil
 	}
 
 	var contents strings.Builder
 	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024) // Increase buffer size
+	scanner.Buffer(make([]byte, 1024*1024), MaxFileSize)
 
 	for scanner.Scan() {
 		contents.WriteString(scanner.Text() + "\n")
 	}
 
 	if err := scanner.Err(); err != nil {
-		return FileInfo{}, fmt.Errorf("error scanning file: %w", err)
+		if err == bufio.ErrTooLong {
+			return FileInfo{Path: path, Contents: "<FILE EXCEEDS BUFFER SIZE>"}, nil
+		}
+		return FileInfo{}, fmt.Errorf("scanning file: %w", err)
 	}
 
 	return FileInfo{Path: path, Contents: contents.String()}, nil
 }
 
-func isBinary(buffer []byte) bool {
+func fileIsBinary(file *os.File) (bool, error) {
+	buffer := make([]byte, 512)
+	bytesRead, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return false, fmt.Errorf("reading file: %w", err)
+	}
+	buffer = buffer[:bytesRead]
+
+	// Reset the file pointer to the beginning
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return false, fmt.Errorf("seeking file: %w", err)
+	}
 	const maxCheck = 1024 // Maximum number of bytes to check
 	if len(buffer) > maxCheck {
 		buffer = buffer[:maxCheck]
@@ -153,7 +221,7 @@ func isBinary(buffer []byte) bool {
 	controlChars := 0
 	for _, b := range buffer {
 		if b == 0 {
-			return true // Null byte, definitely binary
+			return true, nil // Null byte, definitely binary
 		}
 		if b < 7 || (b > 14 && b < 32) {
 			controlChars++
@@ -161,5 +229,5 @@ func isBinary(buffer []byte) bool {
 	}
 
 	// If more than 30% non-UTF8 control characters, assume binary
-	return float64(controlChars)/float64(len(buffer)) > 0.3
+	return float64(controlChars)/float64(len(buffer)) > 0.3, nil
 }
