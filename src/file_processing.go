@@ -11,6 +11,7 @@ import (
 )
 
 const FilesPerGoroutine = 1
+const MaxFileSize = 10 * 1024 * 1024 // 10 MB
 
 type FileProcessor struct {
 	Config        Config
@@ -57,7 +58,7 @@ func (fp *FileProcessor) processFilesParallel(files []string) []FileInfo {
 			for _, file := range chunk {
 				fileInfo, err := processFile(file)
 				if err != nil {
-					fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
+					PrintError("processing", file, err)
 					continue
 				}
 				fileInfoChan <- fileInfo
@@ -86,7 +87,7 @@ func (fp *FileProcessor) findAllDirectories() []string {
 	for _, dir := range fp.Config.Directories {
 		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				fmt.Printf(boldRed("❌ Error accessing path %s: %v\n"), path, err)
+				PrintError("accessing path", path, err)
 				return nil
 			}
 
@@ -120,7 +121,7 @@ func (fp *FileProcessor) findMatchingFiles(dirs []string) []string {
 	for _, dir := range dirs {
 		files, err := os.ReadDir(dir)
 		if err != nil {
-			fmt.Printf(boldRed("❌ Error reading directory %s: %v\n"), dir, err)
+			PrintError("reading directory", dir, err)
 			continue
 		}
 
@@ -154,21 +155,28 @@ func (fp *FileProcessor) matchesExtensions(filename string) bool {
 func processFile(path string) (FileInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return FileInfo{}, fmt.Errorf("error opening file: %w", err)
+		return FileInfo{}, fmt.Errorf("opening file: %w", err)
 	}
 	defer file.Close()
 
 	// Check if the file is empty
-	if info, err := file.Stat(); err != nil {
-		return FileInfo{}, fmt.Errorf("error getting file info: %w", err)
-	} else if info.Size() == 0 {
+	info, err := file.Stat()
+	if err != nil {
+		return FileInfo{}, fmt.Errorf("getting file info: %w", err)
+	}
+	if info.Size() == 0 {
 		return FileInfo{Path: path, Contents: "<EMPTY FILE>"}, nil
+	}
+
+	// Check if the file size exceeds the maximum allowed size
+	if info.Size() > MaxFileSize {
+		return FileInfo{Path: path, Contents: fmt.Sprintf("<FILE TOO LARGE: %d bytes>", info.Size())}, nil
 	}
 
 	// Check if the file is binary
 	isBinary, err := fileIsBinary(file)
 	if err != nil {
-		return FileInfo{}, fmt.Errorf("error checking if file is binary: %w", err)
+		return FileInfo{}, fmt.Errorf("checking if file is binary: %w", err)
 	}
 	if isBinary {
 		return FileInfo{Path: path, Contents: "<BINARY SKIPPED>"}, nil
@@ -176,14 +184,17 @@ func processFile(path string) (FileInfo, error) {
 
 	var contents strings.Builder
 	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024)
+	scanner.Buffer(make([]byte, 1024*1024), MaxFileSize)
 
 	for scanner.Scan() {
 		contents.WriteString(scanner.Text() + "\n")
 	}
 
 	if err := scanner.Err(); err != nil {
-		return FileInfo{}, fmt.Errorf("error scanning file: %w", err)
+		if err == bufio.ErrTooLong {
+			return FileInfo{Path: path, Contents: "<FILE EXCEEDS BUFFER SIZE>"}, nil
+		}
+		return FileInfo{}, fmt.Errorf("scanning file: %w", err)
 	}
 
 	return FileInfo{Path: path, Contents: contents.String()}, nil
@@ -193,14 +204,14 @@ func fileIsBinary(file *os.File) (bool, error) {
 	buffer := make([]byte, 512)
 	bytesRead, err := file.Read(buffer)
 	if err != nil && err != io.EOF {
-		return false, fmt.Errorf("error reading file: %w", err)
+		return false, fmt.Errorf("reading file: %w", err)
 	}
 	buffer = buffer[:bytesRead]
 
 	// Reset the file pointer to the beginning
 	_, err = file.Seek(0, 0)
 	if err != nil {
-		return false, fmt.Errorf("error seeking file: %w", err)
+		return false, fmt.Errorf("seeking file: %w", err)
 	}
 	const maxCheck = 1024 // Maximum number of bytes to check
 	if len(buffer) > maxCheck {

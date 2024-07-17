@@ -75,3 +75,7 @@ func PrintUsage() {
 	fmt.Println("  Use --include-ignored to include files that would normally be ignored (e.g., those in .gitignore).")
 	fmt.Println()
 }
+
+func PrintError(errorType string, filePath string, err error) {
+	fmt.Printf("❌ Error %s file %s: %v\n", errorType, filePath, err)
+}
