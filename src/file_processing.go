@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/gobwas/glob"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,8 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			fmt.Printf(boldRed("❌ Error accessing path %s: %v\n"), path, err)
+			return nil // Continue walking despite the error
 		}
 
 		// Ignore .git directory unless --include-gitignored-paths is used
@@ -60,7 +62,8 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 		if extension == "any" || strings.HasSuffix(info.Name(), "."+extension) {
 			fileInfo, err := processFile(path)
 			if err != nil {
-				return err
+				fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), path, err)
+				return nil // Continue walking despite the error
 			}
 			matchingFiles = append(matchingFiles, fileInfo.Path)
 			detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
@@ -79,21 +82,28 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 func processFile(path string) (FileInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return FileInfo{}, err
+		return FileInfo{}, fmt.Errorf("error opening file: %w", err)
 	}
 	defer file.Close()
+
+	// Check if the file is empty
+	if info, err := file.Stat(); err != nil {
+		return FileInfo{}, fmt.Errorf("error getting file info: %w", err)
+	} else if info.Size() == 0 {
+		return FileInfo{Path: path, Contents: "<EMPTY FILE>"}, nil
+	}
 
 	// Read the first 512 bytes to check if it's a binary file
 	buffer := make([]byte, 512)
 	bytesRead, err := file.Read(buffer)
-	if err != nil {
-		return FileInfo{}, err
+	if err != nil && err != io.EOF {
+		return FileInfo{}, fmt.Errorf("error reading file: %w", err)
 	}
 
 	// Reset the file pointer to the beginning
 	_, err = file.Seek(0, 0)
 	if err != nil {
-		return FileInfo{}, err
+		return FileInfo{}, fmt.Errorf("error seeking file: %w", err)
 	}
 
 	// Check if the file is binary
@@ -103,12 +113,14 @@ func processFile(path string) (FileInfo, error) {
 
 	var contents strings.Builder
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024) // Increase buffer size
+
 	for scanner.Scan() {
 		contents.WriteString(scanner.Text() + "\n")
 	}
 
 	if err := scanner.Err(); err != nil {
-		return FileInfo{}, err
+		return FileInfo{}, fmt.Errorf("error scanning file: %w", err)
 	}
 
 	return FileInfo{Path: path, Contents: contents.String()}, nil
