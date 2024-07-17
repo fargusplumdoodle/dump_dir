@@ -79,7 +79,8 @@ Common version control directories (like .git) are automatically ignored.
 
 To include ignored files, use the `--include-ignored` flag as shown in the examples above.
 
-🛠️ Installation
+## 🛠️ Installation
+
 **Mac and Linux**
 
 You can easily install the latest version of dump_dir using curl. Run the following command in your terminal:
@@ -95,6 +96,7 @@ This script will:
 Alternatively, you can manually download the latest release from the GitHub Releases page and place it in a directory in your PATH.
 
 **Windows**
+
 For Windows users, please download the latest release from the GitHub Releases page and add it to your PATH manually.
 
 ## 💡 Tips for LLM Development
