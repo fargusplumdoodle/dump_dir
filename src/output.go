@@ -6,14 +6,16 @@ import (
 	"strings"
 )
 
-func GenerateSummary(processedFiles []FileInfo, totalLines int) string {
+func GenerateSummary(processedFiles []FileInfo, totalLines int, estimatedTokens int) string {
 	var summary strings.Builder
 	summary.WriteString(boldMagenta("\n🔍 Matching files:\n"))
 	for _, file := range processedFiles {
 		summary.WriteString(fmt.Sprintf("  - %s\n", file.Path))
 	}
 	summary.WriteString(boldCyan(fmt.Sprintf("\n📚 Total files found: %d\n", len(processedFiles))))
-	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all files: %d\n\n", totalLines)))
+	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all files: %d\n", totalLines)))
+	summary.WriteString(boldCyan(fmt.Sprintf("🔢 Estimated tokens: %s\n\n", formatTokenCount(estimatedTokens))))
+
 	return summary.String()
 }
 
@@ -30,21 +32,23 @@ func FormatFileContent(path, contents string) string {
 	return fmt.Sprintf("START FILE: %s\n%s\nEND FILE: %s\n\n", path, contents, path)
 }
 
-func GenerateDetailedOutput(processedFiles []FileInfo) (string, int) {
+func GenerateDetailedOutput(processedFiles []FileInfo) (string, int, int) {
 	var detailedOutput strings.Builder
 	var totalLines int
+	var estimatedTokens int
 
 	for _, fileInfo := range processedFiles {
 		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
 		totalLines += strings.Count(fileInfo.Contents, "\n")
+		estimatedTokens += estimateTokens(fileInfo.Contents)
 	}
 
-	return detailedOutput.String(), totalLines
+	return detailedOutput.String(), totalLines, estimatedTokens
 }
 
 func PrintDetailedOutput(processedFiles []FileInfo) {
-	detailedOutput, totalLines := GenerateDetailedOutput(processedFiles)
-	summary := GenerateSummary(processedFiles, totalLines)
+	detailedOutput, totalLines, estimatedTokens := GenerateDetailedOutput(processedFiles)
+	summary := GenerateSummary(processedFiles, totalLines, estimatedTokens)
 
 	if CopyToClipboard(detailedOutput) {
 		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
@@ -78,4 +82,18 @@ func PrintUsage() {
 
 func PrintError(errorType string, filePath string, err error) {
 	fmt.Printf(boldRed("❌ Error %s file %s: %v\n", errorType, filePath, err))
+}
+
+func estimateTokens(content string) int {
+	return len(strings.Fields(content))
+}
+
+func formatTokenCount(tokens int) string {
+	if tokens < 100 {
+		return fmt.Sprintf("%d", tokens)
+	} else if tokens < 1000 {
+		return fmt.Sprintf("%.1fk", float64(tokens)/1000)
+	} else {
+		return fmt.Sprintf("%dk", tokens/1000)
+	}
 }
