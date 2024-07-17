@@ -15,6 +15,6 @@ func main() {
 	config := ParseArgs(args)
 	fileProcessor := NewFileProcessor(config)
 
-	matchingFiles, detailedOutput, totalLines := fileProcessor.ProcessDirectories()
-	PrintDetailedOutput(matchingFiles, detailedOutput, totalLines)
+	processedFiles := fileProcessor.ProcessDirectories()
+	PrintDetailedOutput(processedFiles)
 }

@@ -17,27 +17,28 @@ func NewFileProcessor(config Config) *FileProcessor {
 	return &FileProcessor{Config: config}
 }
 
-func (fp *FileProcessor) ProcessDirectories() ([]string, string, int) {
-	var matchingFiles []string
-	var detailedOutput strings.Builder
-	var totalLines int
-
+func (fp *FileProcessor) ProcessDirectories() []FileInfo {
+	// Step 1: Find all directories and subdirectories
 	allDirs := fp.findAllDirectories()
+
+	// Step 2: Find all matching files in subdirectories
 	filesToProcess := fp.findMatchingFiles(allDirs)
+
+	// Add specifically mentioned files
 	filesToProcess = append(filesToProcess, fp.Config.SpecificFiles...)
 
+	// Step 3: Process all found files
+	var processedFiles []FileInfo
 	for _, file := range filesToProcess {
 		fileInfo, err := processFile(file)
 		if err != nil {
 			fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
 			continue
 		}
-		matchingFiles = append(matchingFiles, fileInfo.Path)
-		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
-		totalLines += strings.Count(fileInfo.Contents, "\n")
+		processedFiles = append(processedFiles, fileInfo)
 	}
 
-	return matchingFiles, detailedOutput.String(), totalLines
+	return processedFiles
 }
 
 func (fp *FileProcessor) findAllDirectories() []string {

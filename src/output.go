@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-func GenerateSummary(matchingFiles []string, totalLines int) string {
+func GenerateSummary(processedFiles []FileInfo, totalLines int) string {
 	var summary strings.Builder
 	summary.WriteString(boldMagenta("🔍 Matching files:\n"))
-	for _, file := range matchingFiles {
-		summary.WriteString(fmt.Sprintf("  - %s\n", file))
+	for _, file := range processedFiles {
+		summary.WriteString(fmt.Sprintf("  - %s\n", file.Path))
 	}
-	summary.WriteString(boldCyan(fmt.Sprintf("📚 Total files found: %d\n", len(matchingFiles))))
+	summary.WriteString(boldCyan(fmt.Sprintf("📚 Total files found: %d\n", len(processedFiles))))
 	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all files: %d\n\n", totalLines)))
 	return summary.String()
 }
@@ -26,18 +26,31 @@ func CopyToClipboard(content string) bool {
 	return true
 }
 
-func PrintDetailedOutput(matchingFiles []string, detailedOutput string, totalLines int) {
-	summary := GenerateSummary(matchingFiles, totalLines)
+func FormatFileContent(path, contents string) string {
+	return fmt.Sprintf("START FILE: %s\n%s\nEND FILE: %s\n\n", path, contents, path)
+}
+
+func GenerateDetailedOutput(processedFiles []FileInfo) (string, int) {
+	var detailedOutput strings.Builder
+	var totalLines int
+
+	for _, fileInfo := range processedFiles {
+		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
+		totalLines += strings.Count(fileInfo.Contents, "\n")
+	}
+
+	return detailedOutput.String(), totalLines
+}
+
+func PrintDetailedOutput(processedFiles []FileInfo) {
+	detailedOutput, totalLines := GenerateDetailedOutput(processedFiles)
+	summary := GenerateSummary(processedFiles, totalLines)
 
 	if CopyToClipboard(detailedOutput) {
 		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
 	}
 
 	fmt.Println(summary)
-}
-
-func FormatFileContent(path, contents string) string {
-	return fmt.Sprintf("START FILE: %s\n%s\nEND FILE: %s\n\n", path, contents, path)
 }
 
 func PrintUsage() {
