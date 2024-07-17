@@ -9,13 +9,26 @@ import (
 	"strings"
 )
 
-func ProcessDirectories(extension string, directories, skipDirs []string) ([]string, string, int) {
+func ProcessDirectories(extension string, directories, skipDirs []string, specificFiles []string) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
 
+	// Process specific files first
+	for _, file := range specificFiles {
+		fileInfo, err := processFile(file)
+		if err != nil {
+			fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
+			continue
+		}
+		matchingFiles = append(matchingFiles, fileInfo.Path)
+		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
+		totalLines += strings.Count(fileInfo.Contents, "\n")
+	}
+
+	// Process directories
 	for _, dir := range directories {
-		files, output, lines := processDirectory(dir, extension, skipDirs)
+		files, output, lines := processDirectory(dir, extension, skipDirs, specificFiles)
 		matchingFiles = append(matchingFiles, files...)
 		detailedOutput.WriteString(output)
 		totalLines += lines
@@ -24,7 +37,7 @@ func ProcessDirectories(extension string, directories, skipDirs []string) ([]str
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func processDirectory(dir, extension string, skipDirs []string) ([]string, string, int) {
+func processDirectory(dir, extension string, skipDirs, specificFiles []string) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
@@ -43,6 +56,13 @@ func processDirectory(dir, extension string, skipDirs []string) ([]string, strin
 				}
 			}
 			return nil
+		}
+
+		// Check if the file is in the specificFiles list
+		for _, specificFile := range specificFiles {
+			if path == specificFile {
+				return nil // Skip processing here as it's already been processed
+			}
 		}
 
 		if extension == "any" || strings.HasSuffix(info.Name(), "."+extension) {

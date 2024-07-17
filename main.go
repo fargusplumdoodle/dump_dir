@@ -10,8 +10,8 @@ func main() {
 		return
 	}
 
-	extension, directories, skipDirs := ParseArgs(os.Args[1:])
+	extension, directories, skipDirs, specificFiles := ParseArgs(os.Args[1:])
 
-	matchingFiles, detailedOutput, totalLines := ProcessDirectories(extension, directories, skipDirs)
+	matchingFiles, detailedOutput, totalLines := ProcessDirectories(extension, directories, skipDirs, specificFiles)
 	PrintDetailedOutput(matchingFiles, detailedOutput, totalLines)
 }
