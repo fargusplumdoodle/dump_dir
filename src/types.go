@@ -12,3 +12,10 @@ type Config struct {
 	SpecificFiles  []string
 	IncludeIgnored bool
 }
+
+type Stats struct {
+	TotalFiles      int
+	TotalLines      int
+	EstimatedTokens int
+	ProcessedFiles  []FileInfo
+}

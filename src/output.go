@@ -6,57 +6,6 @@ import (
 	"strings"
 )
 
-func GenerateSummary(processedFiles []FileInfo, totalLines int, estimatedTokens int) string {
-	var summary strings.Builder
-	summary.WriteString(boldMagenta("\n🔍 Matching files:\n"))
-	for _, file := range processedFiles {
-		summary.WriteString(fmt.Sprintf("  - %s\n", file.Path))
-	}
-	summary.WriteString(boldCyan(fmt.Sprintf("\n📚 Total files found: %d\n", len(processedFiles))))
-	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all files: %d\n", totalLines)))
-	summary.WriteString(boldCyan(fmt.Sprintf("🔢 Estimated tokens: %s\n\n", formatTokenCount(estimatedTokens))))
-
-	return summary.String()
-}
-
-func CopyToClipboard(content string) bool {
-	err := clipboard.WriteAll(content)
-	if err != nil {
-		fmt.Println(boldRed(fmt.Sprintf("❌ Error copying to clipboard: %v", err)))
-		return false
-	}
-	return true
-}
-
-func FormatFileContent(path, contents string) string {
-	return fmt.Sprintf("START FILE: %s\n%s\nEND FILE: %s\n\n", path, contents, path)
-}
-
-func GenerateDetailedOutput(processedFiles []FileInfo) (string, int, int) {
-	var detailedOutput strings.Builder
-	var totalLines int
-	var estimatedTokens int
-
-	for _, fileInfo := range processedFiles {
-		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
-		totalLines += strings.Count(fileInfo.Contents, "\n")
-		estimatedTokens += estimateTokens(fileInfo.Contents)
-	}
-
-	return detailedOutput.String(), totalLines, estimatedTokens
-}
-
-func PrintDetailedOutput(processedFiles []FileInfo) {
-	detailedOutput, totalLines, estimatedTokens := GenerateDetailedOutput(processedFiles)
-	summary := GenerateSummary(processedFiles, totalLines, estimatedTokens)
-
-	if CopyToClipboard(detailedOutput) {
-		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
-	}
-
-	fmt.Println(summary)
-}
-
 func PrintUsage() {
 	fmt.Println()
 	fmt.Println(boldRed("❌ Error: Insufficient arguments"))
@@ -84,16 +33,36 @@ func PrintError(errorType string, filePath string, err error) {
 	fmt.Printf(boldRed("❌ Error %s file %s: %v\n", errorType, filePath, err))
 }
 
-func estimateTokens(content string) int {
-	return len(strings.Fields(content))
+func CopyToClipboard(content string) bool {
+	err := clipboard.WriteAll(content)
+	if err != nil {
+		fmt.Println(boldRed(fmt.Sprintf("❌ Error copying to clipboard: %v", err)))
+		return false
+	}
+	return true
 }
 
-func formatTokenCount(tokens int) string {
-	if tokens < 100 {
-		return fmt.Sprintf("%d", tokens)
-	} else if tokens < 1000 {
-		return fmt.Sprintf("%.1fk", float64(tokens)/1000)
-	} else {
-		return fmt.Sprintf("%dk", tokens/1000)
+func FormatFileContent(path, contents string) string {
+	return fmt.Sprintf("START FILE: %s\n%s\nEND FILE: %s\n\n", path, contents, path)
+}
+
+func GenerateDetailedOutput(stats Stats) string {
+	var detailedOutput strings.Builder
+
+	for _, fileInfo := range stats.ProcessedFiles {
+		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
 	}
+
+	return detailedOutput.String()
+}
+
+func PrintDetailedOutput(stats Stats) {
+	detailedOutput := GenerateDetailedOutput(stats)
+	summary := DisplayStats(stats)
+
+	if CopyToClipboard(detailedOutput) {
+		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
+	}
+
+	fmt.Println(summary)
 }

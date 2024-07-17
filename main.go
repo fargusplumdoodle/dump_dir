@@ -16,5 +16,6 @@ func main() {
 	fileProcessor := NewFileProcessor(config)
 
 	processedFiles := fileProcessor.ProcessDirectories()
-	PrintDetailedOutput(processedFiles)
+	stats := CalculateStats(processedFiles)
+	PrintDetailedOutput(stats)
 }
