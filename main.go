@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	. "github.com/fargusplumdoodle/dump_dir/src"
 	"github.com/gobwas/glob"
 	"os"
@@ -20,11 +19,5 @@ func main() {
 	}
 
 	matchingFiles, detailedOutput, totalLines := ProcessDirectories(extension, directories, skipDirs, ignorePatterns, includeGitIgnored)
-	summary := GenerateSummary(matchingFiles, totalLines)
-
-	if CopyToClipboard(detailedOutput) {
-		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
-	}
-
-	fmt.Println(summary)
+	PrintDetailedOutput(matchingFiles, detailedOutput, totalLines)
 }
