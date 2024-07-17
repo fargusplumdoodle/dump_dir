@@ -92,15 +92,13 @@ See releases in github!
 
 ## 🤝 Contributing
 
-Raise an issue or make a PR, I made this in 2 hours so don't judge
+Raise an issue or make a PR, I whipped this up real quick so there's probably a lot of room for improvement.
 
 ## 📜 License
 
-Do whatever, I don't mind
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgements
 
-- [fatih/color](https://github.com/fatih/color) for colorful console output
-- [atotto/clipboard](https://github.com/atotto/clipboard) for clipboard functionality
+---------------------------------------------
 
-Happy coding and LLM developing! 🎉👨‍💻👩‍💻
+Happy coding! 🎉👨‍💻👩‍💻
