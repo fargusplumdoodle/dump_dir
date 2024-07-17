@@ -83,6 +83,24 @@ func processFile(path string) (FileInfo, error) {
 	}
 	defer file.Close()
 
+	// Read the first 512 bytes to check if it's a binary file
+	buffer := make([]byte, 512)
+	bytesRead, err := file.Read(buffer)
+	if err != nil {
+		return FileInfo{}, err
+	}
+
+	// Reset the file pointer to the beginning
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return FileInfo{}, err
+	}
+
+	// Check if the file is binary
+	if isBinary(buffer[:bytesRead]) {
+		return FileInfo{Path: path, Contents: "<BINARY SKIPPED>"}, nil
+	}
+
 	var contents strings.Builder
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -94,4 +112,24 @@ func processFile(path string) (FileInfo, error) {
 	}
 
 	return FileInfo{Path: path, Contents: contents.String()}, nil
+}
+
+func isBinary(buffer []byte) bool {
+	const maxCheck = 1024 // Maximum number of bytes to check
+	if len(buffer) > maxCheck {
+		buffer = buffer[:maxCheck]
+	}
+
+	controlChars := 0
+	for _, b := range buffer {
+		if b == 0 {
+			return true // Null byte, definitely binary
+		}
+		if b < 7 || (b > 14 && b < 32) {
+			controlChars++
+		}
+	}
+
+	// If more than 30% non-UTF8 control characters, assume binary
+	return float64(controlChars)/float64(len(buffer)) > 0.3
 }
