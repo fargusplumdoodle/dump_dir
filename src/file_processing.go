@@ -9,13 +9,21 @@ import (
 	"strings"
 )
 
-func ProcessDirectories(extensions []string, directories, skipDirs []string, specificFiles []string) ([]string, string, int) {
+type FileProcessor struct {
+	Config Config
+}
+
+func NewFileProcessor(config Config) *FileProcessor {
+	return &FileProcessor{Config: config}
+}
+
+func (fp *FileProcessor) ProcessDirectories() ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
 
 	// Process specific files first
-	for _, file := range specificFiles {
+	for _, file := range fp.Config.SpecificFiles {
 		fileInfo, err := processFile(file)
 		if err != nil {
 			fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
@@ -27,8 +35,8 @@ func ProcessDirectories(extensions []string, directories, skipDirs []string, spe
 	}
 
 	// Process directories
-	for _, dir := range directories {
-		files, output, lines := processDirectory(dir, extensions, skipDirs, specificFiles)
+	for _, dir := range fp.Config.Directories {
+		files, output, lines := fp.processDirectory(dir)
 		matchingFiles = append(matchingFiles, files...)
 		detailedOutput.WriteString(output)
 		totalLines += lines
@@ -37,7 +45,7 @@ func ProcessDirectories(extensions []string, directories, skipDirs []string, spe
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func processDirectory(dir string, extensions []string, skipDirs, specificFiles []string) ([]string, string, int) {
+func (fp *FileProcessor) processDirectory(dir string) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
@@ -49,7 +57,7 @@ func processDirectory(dir string, extensions []string, skipDirs, specificFiles [
 		}
 
 		if info.IsDir() {
-			for _, skipDir := range skipDirs {
+			for _, skipDir := range fp.Config.SkipDirs {
 				if strings.HasPrefix(path, skipDir) {
 					fmt.Printf("Skipping directory: %s\n", path)
 					return filepath.SkipDir
@@ -59,13 +67,13 @@ func processDirectory(dir string, extensions []string, skipDirs, specificFiles [
 		}
 
 		// Check if the file is in the specificFiles list
-		for _, specificFile := range specificFiles {
+		for _, specificFile := range fp.Config.SpecificFiles {
 			if path == specificFile {
 				return nil // Skip processing here as it's already been processed
 			}
 		}
 
-		if matchesExtensions(info.Name(), extensions) {
+		if fp.matchesExtensions(info.Name()) {
 			fileInfo, err := processFile(path)
 			if err != nil {
 				fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), path, err)
@@ -85,11 +93,11 @@ func processDirectory(dir string, extensions []string, skipDirs, specificFiles [
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func matchesExtensions(filename string, extensions []string) bool {
-	if len(extensions) == 1 && extensions[0] == "any" {
+func (fp *FileProcessor) matchesExtensions(filename string) bool {
+	if len(fp.Config.Extensions) == 1 && fp.Config.Extensions[0] == "any" {
 		return true
 	}
-	for _, ext := range extensions {
+	for _, ext := range fp.Config.Extensions {
 		if strings.HasSuffix(filename, "."+ext) {
 			return true
 		}
@@ -112,20 +120,14 @@ func processFile(path string) (FileInfo, error) {
 	}
 
 	// Read the first 512 bytes to check if it's a binary file
-	buffer := make([]byte, 512)
-	bytesRead, err := file.Read(buffer)
-	if err != nil && err != io.EOF {
-		return FileInfo{}, fmt.Errorf("error reading file: %w", err)
-	}
-
-	// Reset the file pointer to the beginning
-	_, err = file.Seek(0, 0)
-	if err != nil {
-		return FileInfo{}, fmt.Errorf("error seeking file: %w", err)
-	}
 
 	// Check if the file is binary
-	if isBinary(buffer[:bytesRead]) {
+	isBinary, err := fileIsBinary(file)
+	if err != nil {
+		return FileInfo{}, fmt.Errorf("error checking if file is binary: %w", err)
+
+	}
+	if isBinary {
 		return FileInfo{Path: path, Contents: "<BINARY SKIPPED>"}, nil
 	}
 
@@ -144,7 +146,19 @@ func processFile(path string) (FileInfo, error) {
 	return FileInfo{Path: path, Contents: contents.String()}, nil
 }
 
-func isBinary(buffer []byte) bool {
+func fileIsBinary(file *os.File) (bool, error) {
+	buffer := make([]byte, 512)
+	bytesRead, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return false, fmt.Errorf("error reading file: %w", err)
+	}
+	buffer = buffer[:bytesRead]
+
+	// Reset the file pointer to the beginning
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return false, fmt.Errorf("error seeking file: %w", err)
+	}
 	const maxCheck = 1024 // Maximum number of bytes to check
 	if len(buffer) > maxCheck {
 		buffer = buffer[:maxCheck]
@@ -153,7 +167,7 @@ func isBinary(buffer []byte) bool {
 	controlChars := 0
 	for _, b := range buffer {
 		if b == 0 {
-			return true // Null byte, definitely binary
+			return true, nil // Null byte, definitely binary
 		}
 		if b < 7 || (b > 14 && b < 32) {
 			controlChars++
@@ -161,5 +175,5 @@ func isBinary(buffer []byte) bool {
 	}
 
 	// If more than 30% non-UTF8 control characters, assume binary
-	return float64(controlChars)/float64(len(buffer)) > 0.3
+	return float64(controlChars)/float64(len(buffer)) > 0.3, nil
 }

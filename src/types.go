@@ -4,3 +4,10 @@ type FileInfo struct {
 	Path     string
 	Contents string
 }
+
+type Config struct {
+	Extensions    []string
+	Directories   []string
+	SkipDirs      []string
+	SpecificFiles []string
+}

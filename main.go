@@ -6,12 +6,15 @@ import (
 )
 
 func main() {
-	if !ValidateArgs() {
+	args := os.Args[1:]
+
+	if !ValidateArgs(args) {
+		PrintUsage()
 		return
 	}
+	config := ParseArgs(args)
+	fileProcessor := NewFileProcessor(config)
 
-	extension, directories, skipDirs, specificFiles := ParseArgs(os.Args[1:])
-
-	matchingFiles, detailedOutput, totalLines := ProcessDirectories(extension, directories, skipDirs, specificFiles)
+	matchingFiles, detailedOutput, totalLines := fileProcessor.ProcessDirectories()
 	PrintDetailedOutput(matchingFiles, detailedOutput, totalLines)
 }
