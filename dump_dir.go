@@ -8,12 +8,20 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/fatih/color"
 )
 
 type FileInfo struct {
 	Path     string
 	Contents string
 }
+
+var (
+	boldGreen   = color.New(color.FgGreen, color.Bold).SprintfFunc()
+	boldCyan    = color.New(color.FgCyan, color.Bold).SprintfFunc()
+	boldMagenta = color.New(color.FgMagenta, color.Bold).SprintfFunc()
+	boldRed     = color.New(color.FgRed, color.Bold).SprintfFunc()
+)
 
 func main() {
 	if !validateArgs() {
@@ -26,7 +34,7 @@ func main() {
 	summary := generateSummary(matchingFiles, totalLines)
 
 	if copyToClipboard(detailedOutput) {
-		summary += "Detailed output has been copied to clipboard.\n"
+		summary += boldGreen("✅ File contents have been copied to clipboard.\n")
 	}
 
 	fmt.Println(summary)
@@ -34,9 +42,18 @@ func main() {
 
 func validateArgs() bool {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: dump_dir <file_extension> <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ...")
-		fmt.Println("Example: dump_dir js ./project -s ./project/node_modules -s ./project/dist")
-		fmt.Println("This will search for all .js files in ./project, excluding the node_modules and dist directories.")
+		fmt.Println()
+		fmt.Println(boldRed("❌ Error: Insufficient arguments"))
+		fmt.Println()
+		fmt.Println(boldCyan("Usage:"))
+		fmt.Println("  dump_dir <file_extension> <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ...")
+		fmt.Println()
+		fmt.Println(boldGreen("Example:"))
+		fmt.Println("  dump_dir js ./project -s ./project/node_modules -s ./project/dist")
+		fmt.Println()
+		fmt.Println(boldMagenta("Description:"))
+		fmt.Println("  This will search for all .js files in ./project, excluding the node_modules and dist directories.")
+		fmt.Println()
 		return false
 	}
 	return true
@@ -102,14 +119,14 @@ func processDirectory(dir, extension string, skipDirs []string) ([]string, strin
 				return err
 			}
 			matchingFiles = append(matchingFiles, fileInfo.Path)
-			detailedOutput.WriteString(fmt.Sprintf("File: %s\n%s\n\n", fileInfo.Path, fileInfo.Contents))
+			detailedOutput.WriteString(fmt.Sprintf("📄 File: %s\n%s\n\n", boldCyan(fileInfo.Path), fileInfo.Contents))
 			totalLines += strings.Count(fileInfo.Contents, "\n")
 		}
 		return nil
 	})
 
 	if err != nil {
-		fmt.Printf("Error walking directory %s: %v\n", dir, err)
+		fmt.Printf(boldRed("❌ Error walking directory %s: %v\n"), dir, err)
 	}
 
 	return matchingFiles, detailedOutput.String(), totalLines
@@ -137,19 +154,19 @@ func processFile(path string) (FileInfo, error) {
 
 func generateSummary(matchingFiles []string, totalLines int) string {
 	var summary strings.Builder
-	summary.WriteString("\nMatching files:\n")
+	summary.WriteString(boldMagenta("🔍 Matching files:\n"))
 	for _, file := range matchingFiles {
-		summary.WriteString(fmt.Sprintf("- %s\n", file))
+		summary.WriteString(fmt.Sprintf("  - %s\n", file))
 	}
-	summary.WriteString(fmt.Sprintf("Total files found: %d\n", len(matchingFiles)))
-	summary.WriteString(fmt.Sprintf("Total lines across all files: %d\n", totalLines))
+	summary.WriteString(boldCyan(fmt.Sprintf("📚 Total files found: %d\n", len(matchingFiles))))
+	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all files: %d\n\n", totalLines)))
 	return summary.String()
 }
 
 func copyToClipboard(content string) bool {
 	err := clipboard.WriteAll(content)
 	if err != nil {
-		fmt.Println("Error copying to clipboard:", err)
+		fmt.Println(boldRed(fmt.Sprintf("❌ Error copying to clipboard: %v", err)))
 		return false
 	}
 	return true
