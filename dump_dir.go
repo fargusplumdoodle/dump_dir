@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/gobwas/glob"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,9 +29,14 @@ func main() {
 		return
 	}
 
-	extension, directories, skipDirs := parseArgs(os.Args[1:])
+	extension, directories, skipDirs, includeGitIgnored := parseArgs(os.Args[1:])
 
-	matchingFiles, detailedOutput, totalLines := processDirectories(extension, directories, skipDirs)
+	ignorePatterns := []glob.Glob{}
+	if !includeGitIgnored {
+		ignorePatterns = getIgnorePatterns(directories)
+	}
+
+	matchingFiles, detailedOutput, totalLines := processDirectories(extension, directories, skipDirs, ignorePatterns)
 	summary := generateSummary(matchingFiles, totalLines)
 
 	if copyToClipboard(detailedOutput) {
@@ -46,31 +52,37 @@ func validateArgs() bool {
 		fmt.Println(boldRed("❌ Error: Insufficient arguments"))
 		fmt.Println()
 		fmt.Println(boldCyan("Usage:"))
-		fmt.Println("  dump_dir <file_extension> <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ...")
+		fmt.Println("  dump_dir <file_extension> <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ... [--include-gitignored-paths]")
 		fmt.Println("  Use 'any' as file_extension to match all files")
 		fmt.Println()
 		fmt.Println(boldGreen("Example:"))
 		fmt.Println("  dump_dir js ./project -s ./project/node_modules -s ./project/dist")
-		fmt.Println("  dump_dir any ./project -s ./project/node_modules")
+		fmt.Println("  dump_dir any ./project -s ./project/node_modules --include-gitignored-paths")
 		fmt.Println()
 		fmt.Println(boldMagenta("Description:"))
 		fmt.Println("  This will search for files with the specified extension (or all files if 'any' is used)")
-		fmt.Println("  in the given directories, excluding any specified directories.")
+		fmt.Println("  in the given directories, excluding any specified directories and .gitignore'd files by default.")
+		fmt.Println("  Use --include-gitignored-paths to include files that would be ignored by .gitignore.")
 		fmt.Println()
 		return false
 	}
 	return true
 }
 
-func parseArgs(args []string) (string, []string, []string) {
+func parseArgs(args []string) (string, []string, []string, bool) {
 	extension := args[0]
 	var directories []string
 	var skipDirs []string
 	skipMode := false
+	includeGitIgnored := false
 
 	for _, arg := range args[1:] {
 		if arg == "-s" {
 			skipMode = true
+			continue
+		}
+		if arg == "--include-gitignored-paths" {
+			includeGitIgnored = true
 			continue
 		}
 		if skipMode {
@@ -81,16 +93,55 @@ func parseArgs(args []string) (string, []string, []string) {
 		}
 	}
 
-	return extension, directories, skipDirs
+	return extension, directories, skipDirs, includeGitIgnored
 }
 
-func processDirectories(extension string, directories, skipDirs []string) ([]string, string, int) {
+func getIgnorePatterns(directories []string) []glob.Glob {
+	var patterns []glob.Glob
+
+	// Add patterns from global .gitignore
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		globalGitignore := filepath.Join(homeDir, ".gitignore_global")
+		patterns = append(patterns, readIgnoreFile(globalGitignore)...)
+	}
+
+	// Add patterns from local .gitignore files
+	for _, dir := range directories {
+		localGitignore := filepath.Join(dir, ".gitignore")
+		patterns = append(patterns, readIgnoreFile(localGitignore)...)
+	}
+
+	return patterns
+}
+func readIgnoreFile(path string) []glob.Glob {
+	var patterns []glob.Glob
+	file, err := os.Open(path)
+	if err != nil {
+		return patterns
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" && !strings.HasPrefix(line, "#") {
+			if g, err := glob.Compile(line); err == nil {
+				patterns = append(patterns, g)
+			}
+		}
+	}
+
+	return patterns
+}
+
+func processDirectories(extension string, directories, skipDirs []string, ignorePatterns []glob.Glob) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
 
 	for _, dir := range directories {
-		files, output, lines := processDirectory(dir, extension, skipDirs)
+		files, output, lines := processDirectory(dir, extension, skipDirs, ignorePatterns)
 		matchingFiles = append(matchingFiles, files...)
 		detailedOutput.WriteString(output)
 		totalLines += lines
@@ -99,7 +150,7 @@ func processDirectories(extension string, directories, skipDirs []string) ([]str
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func processDirectory(dir, extension string, skipDirs []string) ([]string, string, int) {
+func processDirectory(dir, extension string, skipDirs []string, ignorePatterns []glob.Glob) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
@@ -116,6 +167,14 @@ func processDirectory(dir, extension string, skipDirs []string) ([]string, strin
 			}
 			return nil
 		}
+
+		relPath, _ := filepath.Rel(dir, path)
+		for _, pattern := range ignorePatterns {
+			if pattern.Match(relPath) {
+				return nil
+			}
+		}
+
 		if extension == "any" || strings.HasSuffix(info.Name(), "."+extension) {
 			fileInfo, err := processFile(path)
 			if err != nil {
