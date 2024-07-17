@@ -10,7 +10,6 @@ Copy a bunch of files into your clipboard to provide context for LLms
 
 Certainly! Here's the installation instructions section in a code block, ready for you to copy as markdown:
 
-```markdown
 ## 🛠️ Installation
 
 ### macOS and Linux
@@ -24,12 +23,12 @@ Certainly! Here's the installation instructions section in a code block, ready f
 
    ```bash
    # For macOS:
-   curl -LO https://github.com/fargusplumdoodle/dump_dir/releases/download/latest/dump_dir_darwin_ARCH
+   curl -LO https://github.com/fargusplumdoodle/dump_dir/releases/download/vVERSION/dump_dir_darwin_ARCH
    chmod +x dump_dir_darwin_ARCH
    sudo mv dump_dir_darwin_ARCH /usr/local/bin/dump_dir
 
    # For Linux:
-   curl -LO https://github.com/fargusplumdoodle/dump_dir/releases/download/latest/dump_dir_linux_ARCH
+   curl -LO https://github.com/fargusplumdoodle/dump_dir/releases/download/vVERSION/dump_dir_linux_ARCH
    chmod +x dump_dir_linux_ARCH
    sudo mv dump_dir_linux_ARCH /usr/local/bin/dump_dir
 
