@@ -63,7 +63,7 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 				return err
 			}
 			matchingFiles = append(matchingFiles, fileInfo.Path)
-			detailedOutput.WriteString(fmt.Sprintf("📄 File: %s\n%s\n\n", boldCyan(fileInfo.Path), fileInfo.Contents))
+			detailedOutput.WriteString(fmt.Sprintf("START FILE: %s\n%s\n\nEND FILE: %s\n\n", fileInfo.Path, fileInfo.Contents, fileInfo.Path))
 			totalLines += strings.Count(fileInfo.Contents, "\n")
 		}
 		return nil
