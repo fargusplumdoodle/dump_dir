@@ -22,8 +22,11 @@ func (fp *FileProcessor) ProcessDirectories() ([]string, string, int) {
 	var detailedOutput strings.Builder
 	var totalLines int
 
-	// Process specific files first
-	for _, file := range fp.Config.SpecificFiles {
+	allDirs := fp.findAllDirectories()
+	filesToProcess := fp.findMatchingFiles(allDirs)
+	filesToProcess = append(filesToProcess, fp.Config.SpecificFiles...)
+
+	for _, file := range filesToProcess {
 		fileInfo, err := processFile(file)
 		if err != nil {
 			fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), file, err)
@@ -34,63 +37,57 @@ func (fp *FileProcessor) ProcessDirectories() ([]string, string, int) {
 		totalLines += strings.Count(fileInfo.Contents, "\n")
 	}
 
-	// Process directories
-	for _, dir := range fp.Config.Directories {
-		files, output, lines := fp.processDirectory(dir)
-		matchingFiles = append(matchingFiles, files...)
-		detailedOutput.WriteString(output)
-		totalLines += lines
-	}
-
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func (fp *FileProcessor) processDirectory(dir string) ([]string, string, int) {
-	var matchingFiles []string
-	var detailedOutput strings.Builder
-	var totalLines int
+func (fp *FileProcessor) findAllDirectories() []string {
+	var allDirs []string
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			fmt.Printf(boldRed("❌ Error accessing path %s: %v\n"), path, err)
-			return nil // Continue walking despite the error
-		}
+	for _, dir := range fp.Config.Directories {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				fmt.Printf(boldRed("❌ Error accessing path %s: %v\n"), path, err)
+				return nil
+			}
 
-		if info.IsDir() {
-			for _, skipDir := range fp.Config.SkipDirs {
-				if strings.HasPrefix(path, skipDir) {
-					fmt.Printf("Skipping directory: %s\n", path)
-					return filepath.SkipDir
+			if info.IsDir() {
+				for _, skipDir := range fp.Config.SkipDirs {
+					if strings.HasPrefix(path, skipDir) {
+						fmt.Printf("Skipping directory: %s\n", path)
+						return filepath.SkipDir
+					}
 				}
+				allDirs = append(allDirs, path)
 			}
 			return nil
-		}
+		})
 
-		// Check if the file is in the specificFiles list
-		for _, specificFile := range fp.Config.SpecificFiles {
-			if path == specificFile {
-				return nil // Skip processing here as it's already been processed
-			}
+		if err != nil {
+			fmt.Printf(boldRed("❌ Error walking directory %s: %v\n"), dir, err)
 		}
-
-		if fp.matchesExtensions(info.Name()) {
-			fileInfo, err := processFile(path)
-			if err != nil {
-				fmt.Printf(boldRed("❌ Error processing file %s: %v\n"), path, err)
-				return nil // Continue walking despite the error
-			}
-			matchingFiles = append(matchingFiles, fileInfo.Path)
-			detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
-			totalLines += strings.Count(fileInfo.Contents, "\n")
-		}
-		return nil
-	})
-
-	if err != nil {
-		fmt.Printf(boldRed("❌ Error walking directory %s: %v\n"), dir, err)
 	}
 
-	return matchingFiles, detailedOutput.String(), totalLines
+	return allDirs
+}
+
+func (fp *FileProcessor) findMatchingFiles(dirs []string) []string {
+	var matchingFiles []string
+
+	for _, dir := range dirs {
+		files, err := os.ReadDir(dir)
+		if err != nil {
+			fmt.Printf(boldRed("❌ Error reading directory %s: %v\n"), dir, err)
+			continue
+		}
+
+		for _, file := range files {
+			if !file.IsDir() && fp.matchesExtensions(file.Name()) {
+				matchingFiles = append(matchingFiles, filepath.Join(dir, file.Name()))
+			}
+		}
+	}
+
+	return matchingFiles
 }
 
 func (fp *FileProcessor) matchesExtensions(filename string) bool {
@@ -119,13 +116,10 @@ func processFile(path string) (FileInfo, error) {
 		return FileInfo{Path: path, Contents: "<EMPTY FILE>"}, nil
 	}
 
-	// Read the first 512 bytes to check if it's a binary file
-
 	// Check if the file is binary
 	isBinary, err := fileIsBinary(file)
 	if err != nil {
 		return FileInfo{}, fmt.Errorf("error checking if file is binary: %w", err)
-
 	}
 	if isBinary {
 		return FileInfo{Path: path, Contents: "<BINARY SKIPPED>"}, nil
