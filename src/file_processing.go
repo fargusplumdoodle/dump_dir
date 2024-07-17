@@ -58,7 +58,7 @@ func (fp *FileProcessor) findAllDirectories() []string {
 			}
 
 			if info.IsDir() {
-				if fp.IgnoreManager.ShouldIgnore(path) {
+				if !fp.Config.IncludeIgnored && fp.IgnoreManager.ShouldIgnore(path) {
 					fmt.Printf("Skipping ignored directory: %s\n", path)
 					return filepath.SkipDir
 				}
@@ -94,8 +94,10 @@ func (fp *FileProcessor) findMatchingFiles(dirs []string) []string {
 		for _, file := range files {
 			if !file.IsDir() {
 				filePath := filepath.Join(dir, file.Name())
-				if !fp.IgnoreManager.ShouldIgnore(filePath) && fp.matchesExtensions(file.Name()) {
-					matchingFiles = append(matchingFiles, filePath)
+				if fp.Config.IncludeIgnored || !fp.IgnoreManager.ShouldIgnore(filePath) {
+					if fp.matchesExtensions(file.Name()) {
+						matchingFiles = append(matchingFiles, filePath)
+					}
 				}
 			}
 		}

@@ -6,8 +6,9 @@ type FileInfo struct {
 }
 
 type Config struct {
-	Extensions    []string
-	Directories   []string
-	SkipDirs      []string
-	SpecificFiles []string
+	Extensions     []string
+	Directories    []string
+	SkipDirs       []string
+	SpecificFiles  []string
+	IncludeIgnored bool
 }

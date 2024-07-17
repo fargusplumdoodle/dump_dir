@@ -24,8 +24,11 @@ func ParseArgs(args []string) Config {
 	}
 
 	skipMode := false
-
 	for _, arg := range args[1:] {
+		if arg == "--include-ignored" {
+			config.IncludeIgnored = true
+			continue
+		}
 		if arg == "-s" {
 			skipMode = true
 			continue

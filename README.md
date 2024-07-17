@@ -73,6 +73,11 @@ Get all Go, JavaScript, and Python files in your project:
 dump_dir go,js,py ./project
 ````
 
+Get all files, including those normally ignored (e.g., files in .gitignore):
+```bash
+dump_dir any ./project --include-ignored
+```
+
 This repo:
 ```txt
 dump_dir go . ./README.md
