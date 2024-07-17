@@ -36,7 +36,7 @@ func main() {
 		ignorePatterns = getIgnorePatterns(directories)
 	}
 
-	matchingFiles, detailedOutput, totalLines := processDirectories(extension, directories, skipDirs, ignorePatterns)
+	matchingFiles, detailedOutput, totalLines := processDirectories(extension, directories, skipDirs, ignorePatterns, includeGitIgnored)
 	summary := generateSummary(matchingFiles, totalLines)
 
 	if copyToClipboard(detailedOutput) {
@@ -135,13 +135,13 @@ func readIgnoreFile(path string) []glob.Glob {
 	return patterns
 }
 
-func processDirectories(extension string, directories, skipDirs []string, ignorePatterns []glob.Glob) ([]string, string, int) {
+func processDirectories(extension string, directories, skipDirs []string, ignorePatterns []glob.Glob, includeGitIgnored bool) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
 
 	for _, dir := range directories {
-		files, output, lines := processDirectory(dir, extension, skipDirs, ignorePatterns)
+		files, output, lines := processDirectory(dir, extension, skipDirs, ignorePatterns, includeGitIgnored)
 		matchingFiles = append(matchingFiles, files...)
 		detailedOutput.WriteString(output)
 		totalLines += lines
@@ -150,7 +150,7 @@ func processDirectories(extension string, directories, skipDirs []string, ignore
 	return matchingFiles, detailedOutput.String(), totalLines
 }
 
-func processDirectory(dir, extension string, skipDirs []string, ignorePatterns []glob.Glob) ([]string, string, int) {
+func processDirectory(dir, extension string, skipDirs []string, ignorePatterns []glob.Glob, includeGitIgnored bool) ([]string, string, int) {
 	var matchingFiles []string
 	var detailedOutput strings.Builder
 	var totalLines int
@@ -159,6 +159,12 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 		if err != nil {
 			return err
 		}
+
+		// Ignore .git directory unless --include-gitignored-paths is used
+		if !includeGitIgnored && info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
 		if info.IsDir() {
 			for _, skipDir := range skipDirs {
 				if strings.HasPrefix(path, skipDir) {
@@ -169,9 +175,11 @@ func processDirectory(dir, extension string, skipDirs []string, ignorePatterns [
 		}
 
 		relPath, _ := filepath.Rel(dir, path)
-		for _, pattern := range ignorePatterns {
-			if pattern.Match(relPath) {
-				return nil
+		if !includeGitIgnored {
+			for _, pattern := range ignorePatterns {
+				if pattern.Match(relPath) {
+					return nil
+				}
 			}
 		}
 
