@@ -8,6 +8,7 @@ Copy a bunch of files into your clipboard to provide context for LLMs
 - 📋 Automatically copy file contents to clipboard
 - 🚫 Skip specified directories
 - 📝 Respects .gitignore rules by default
+- 🚀 Fast! Can copy 1.6 million tokens in ~0.8 seconds
 
 
 ## 🚀 Usage
