@@ -15,10 +15,13 @@ var ExecCommand = exec.Command
 type IgnoreManager struct {
 	ignorePatterns []glob.Glob
 	ignoreDirs     []string
+	includeIgnored bool
 }
 
-func NewIgnoreManager() (*IgnoreManager, error) {
-	im := &IgnoreManager{}
+func NewIgnoreManager(includeIgnored bool) (*IgnoreManager, error) {
+	im := &IgnoreManager{
+		includeIgnored: includeIgnored,
+	}
 	err := im.loadIgnorePatterns()
 	if err != nil {
 		return nil, err
@@ -76,6 +79,9 @@ func (im *IgnoreManager) loadIgnoreFile(path string) {
 }
 
 func (im *IgnoreManager) ShouldIgnore(path string) bool {
+	if im.includeIgnored {
+		return false
+	}
 	// Check if the path or any of its parent directories should be ignored
 	dir := path
 	for dir != "." && dir != "/" {
@@ -96,13 +102,4 @@ func (im *IgnoreManager) ShouldIgnore(path string) bool {
 	}
 
 	return false
-}
-
-func UpdateFileProcessor(fp *FileFinder) error {
-	im, err := NewIgnoreManager()
-	if err != nil {
-		return err
-	}
-	fp.IgnoreManager = im
-	return nil
 }

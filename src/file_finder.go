@@ -16,9 +16,11 @@ type FileFinder struct {
 
 func NewFileFinder(config Config, fs afero.Fs) *FileFinder {
 	ff := &FileFinder{Config: config, Fs: fs}
-	if err := UpdateFileProcessor(ff); err != nil {
+	im, err := NewIgnoreManager(config.IncludeIgnored)
+	if err != nil {
 		fmt.Printf(boldRed("❌ Error initializing IgnoreManager: %v\n"), err)
 	}
+	ff.IgnoreManager = im
 	return ff
 }
 
@@ -54,7 +56,7 @@ func (ff *FileFinder) walkDirectory(dir string, allDirs *[]string) {
 }
 
 func (ff *FileFinder) shouldSkipDirectory(path string) bool {
-	if !ff.Config.IncludeIgnored && ff.IgnoreManager.ShouldIgnore(path) {
+	if ff.IgnoreManager.ShouldIgnore(path) {
 		fmt.Printf("Skipping ignored directory: %s\n", path)
 		return true
 	}
@@ -97,8 +99,7 @@ func (ff *FileFinder) processFile(dir string, file os.FileInfo, matchingFiles *[
 }
 
 func (ff *FileFinder) shouldProcessFile(filePath string) bool {
-	return !ff.isInSkipDirs(filePath) &&
-		(ff.Config.IncludeIgnored || !ff.IgnoreManager.ShouldIgnore(filePath)) &&
+	return !ff.IgnoreManager.ShouldIgnore(filePath) &&
 		ff.matchesExtensions(filepath.Base(filePath))
 }
 
