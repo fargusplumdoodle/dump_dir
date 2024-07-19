@@ -1,0 +1,2 @@
+#!/bin/bash
+go build -o dump_dir ./main.go && sudo mv ./dump_dir /usr/local/bin/dump_dir

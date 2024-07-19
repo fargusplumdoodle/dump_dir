@@ -8,8 +8,9 @@ type ConfigOption func(*Config)
 // BuildConfig creates a Config with default values and applies the given options
 func BuildConfig(options ...ConfigOption) Config {
 	config := Config{
-		Extensions:     []string{"go"},
-		Directories:    []string{"./src"},
+		Action:         "dump_dir",
+		Extensions:     []string{},
+		Directories:    []string{},
 		SkipDirs:       []string{},
 		SpecificFiles:  []string{},
 		IncludeIgnored: false,
@@ -20,6 +21,12 @@ func BuildConfig(options ...ConfigOption) Config {
 	}
 
 	return config
+}
+
+func WithAction(action string) ConfigOption {
+	return func(c *Config) {
+		c.Action = action
+	}
 }
 
 // WithExtensions sets the Extensions field of the Config

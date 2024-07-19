@@ -22,7 +22,10 @@ func TestFileFinder(t *testing.T) {
 				"src/subdir/file3.go": "package subdir",
 				"src/file4.txt":       "text file",
 			},
-			config: BuildConfig(),
+			config: BuildConfig(
+				WithExtensions("go"),
+				WithDirectories("src"),
+			),
 			expectedFiles: []string{
 				"src/file1.go",
 				"src/file2.go",
@@ -40,7 +43,10 @@ func TestFileFinder(t *testing.T) {
 				"src/file3.py":  "print('Hello')",
 				"src/file4.txt": "text file",
 			},
-			config: BuildConfig(WithExtensions("js", "py")),
+			config: BuildConfig(
+				WithDirectories("src"),
+				WithExtensions("js", "py"),
+			),
 			expectedFiles: []string{
 				"src/file2.js",
 				"src/file3.py",
@@ -57,7 +63,10 @@ func TestFileFinder(t *testing.T) {
 				"src/subdir/file2.go": "package subdir",
 				"src/skipme/file3.go": "package skipme",
 			},
-			config: BuildConfig(WithSkipDirs("src/skipme")),
+			config: BuildConfig(
+				WithExtensions("go"),
+				WithDirectories("src"),
+				WithSkipDirs("src/skipme")),
 			expectedFiles: []string{
 				"src/file1.go",
 				"src/subdir/file2.go",
@@ -73,7 +82,10 @@ func TestFileFinder(t *testing.T) {
 				"src/file2.js":  "console.log('Hello');",
 				"root/file3.go": "package root",
 			},
-			config: BuildConfig(WithSpecificFiles("root/file3.go")),
+			config: BuildConfig(
+				WithExtensions("go"),
+				WithDirectories("src"),
+				WithSpecificFiles("root/file3.go")),
 			expectedFiles: []string{
 				"src/file1.go",
 				"root/file3.go",
@@ -89,7 +101,10 @@ func TestFileFinder(t *testing.T) {
 				"tests/file2.go": "console.log('Hello');",
 				"root/file3.go":  "package root",
 			},
-			config: BuildConfig(WithDirectories("src", "tests", "./root")),
+			config: BuildConfig(
+
+				WithExtensions("go"),
+				WithDirectories("src", "tests", "./root")),
 			expectedFiles: []string{
 				"src/file1.go",
 				"tests/file2.go",
@@ -105,7 +120,10 @@ func TestFileFinder(t *testing.T) {
 				"src/dir/file2.go":        "package root",
 				"src/dir/ignore/file2.go": "package root",
 			},
-			config: BuildConfig(WithSkipDirs("src/ignore", "src/dir/ignore/")),
+			config: BuildConfig(
+				WithExtensions("go"),
+				WithDirectories("src"),
+				WithSkipDirs("src/ignore", "src/dir/ignore/")),
 			expectedFiles: []string{
 				"src/file1.go",
 				"src/dir/file2.go",

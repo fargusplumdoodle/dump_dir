@@ -2,9 +2,10 @@ package src
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 )
+
+var OsStat = os.Stat
 
 func ValidateArgs(args []string) bool {
 	return len(args) > 0
@@ -12,7 +13,11 @@ func ValidateArgs(args []string) bool {
 
 func ParseArgs(args []string) Config {
 	config := Config{
-		Action: "dump_dir", // Default action
+		Action:        "dump_dir", // Default action
+		SkipDirs:      []string{},
+		SpecificFiles: []string{},
+		Directories:   []string{},
+		Extensions:    []string{},
 	}
 
 	if len(args) == 0 {
@@ -50,14 +55,15 @@ func ParseArgs(args []string) Config {
 			config.SkipDirs = append(config.SkipDirs, arg)
 			skipMode = false
 		} else {
-			if fileInfo, err := os.Stat(arg); err == nil {
+			if fileInfo, err := OsStat(arg); err == nil {
 				if fileInfo.IsDir() {
 					config.Directories = append(config.Directories, arg)
 				} else {
-					config.SpecificFiles = append(config.SpecificFiles, filepath.Clean(arg))
+					config.SpecificFiles = append(config.SpecificFiles, arg)
 				}
 			} else {
-				config.Directories = append(config.Directories, arg) // Assume it's a directory if we can't stat it
+				// If we can't stat it, assume it's a directory
+				config.Directories = append(config.Directories, arg)
 			}
 		}
 	}

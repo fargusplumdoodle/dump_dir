@@ -25,7 +25,10 @@ func TestIgnoreFunctionality(t *testing.T) {
 				".git/config",
 				".git/objects/abc",
 			},
-			config: BuildConfig(),
+			config: BuildConfig(
+				WithExtensions("go"),
+				WithDirectories("src"),
+			),
 			expectedFiles: []string{
 				"src/file1.go",
 			},
@@ -42,7 +45,10 @@ func TestIgnoreFunctionality(t *testing.T) {
 				"build/output.txt",
 			},
 			globalGitignore: "*.log\nbuild/",
-			config:          BuildConfig(),
+			config: BuildConfig(
+				WithDirectories("src"),
+				WithExtensions("go"),
+			),
 			expectedFiles: []string{
 				"src/file1.go",
 			},
@@ -59,7 +65,10 @@ func TestIgnoreFunctionality(t *testing.T) {
 				"dist/bundle.js",
 			},
 			localGitignore: "*.tmp\ndist/",
-			config:         BuildConfig(),
+			config: BuildConfig(
+				WithDirectories("src"),
+				WithExtensions("go"),
+			),
 			expectedFiles: []string{
 				"src/file1.go",
 			},
@@ -78,6 +87,7 @@ func TestIgnoreFunctionality(t *testing.T) {
 			localGitignore: "*.tmp\ndist/",
 			config: BuildConfig(
 				WithExtensions("go", "tmp", "js"),
+				WithDirectories("."),
 				WithIncludeIgnored(true),
 			),
 			expectedFiles: []string{
