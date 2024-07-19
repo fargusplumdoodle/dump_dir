@@ -7,21 +7,34 @@ import (
 )
 
 func ValidateArgs(args []string) bool {
-	if len(args) < 2 {
-		return false
-	}
-	return true
+	return len(args) > 0
 }
 
 func ParseArgs(args []string) Config {
-	if len(args) < 1 {
-		PrintUsage()
-		return Config{}
+	config := Config{
+		Action: "dump_dir", // Default action
 	}
 
-	config := Config{
-		Extensions: strings.Split(args[0], ","),
+	if len(args) == 0 {
+		return config
 	}
+
+	// Check for version flag
+	if args[0] == "--version" || args[0] == "-v" {
+		config.Action = "version"
+		return config
+	}
+
+	// Check for help flag anywhere in the arguments
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			config.Action = "help"
+			return config
+		}
+	}
+
+	// If we're here, it's the default dump_dir action
+	config.Extensions = strings.Split(args[0], ",")
 
 	skipMode := false
 	for _, arg := range args[1:] {

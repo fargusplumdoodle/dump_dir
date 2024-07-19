@@ -6,6 +6,7 @@ type FileInfo struct {
 }
 
 type Config struct {
+	Action         string
 	Extensions     []string
 	Directories    []string
 	SkipDirs       []string
