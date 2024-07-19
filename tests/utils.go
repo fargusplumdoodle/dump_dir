@@ -1,7 +1,9 @@
 package tests
 
 import (
+	. "github.com/fargusplumdoodle/dump_dir/src"
 	"github.com/spf13/afero"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -23,4 +25,8 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func ResetExecCommand() {
+	ExecCommand = exec.Command
 }

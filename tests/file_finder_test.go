@@ -124,17 +124,7 @@ func TestFileFinder(t *testing.T) {
 
 			foundFiles := fileFinder.DiscoverFiles()
 
-			for _, expectedFile := range tt.expectedFiles {
-				if !contains(foundFiles, expectedFile) {
-					t.Errorf("Expected file not found: %s", expectedFile)
-				}
-			}
-
-			for _, unexpectedFile := range tt.unexpectedFiles {
-				if contains(foundFiles, unexpectedFile) {
-					t.Errorf("Unexpected file found: %s", unexpectedFile)
-				}
-			}
+			assertFilesFound(t, foundFiles, tt.expectedFiles, tt.unexpectedFiles)
 		})
 	}
 }
