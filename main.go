@@ -6,7 +6,11 @@ import (
 	"os"
 )
 
-const version = "1.0.0" // You can update this as needed
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 func main() {
 	args := os.Args[1:]
@@ -42,4 +46,6 @@ func performDumpDir(config Config) {
 
 func PrintVersion() {
 	println("dump_dir version:", version)
+	println("commit:", commit)
+	println("built at:", date)
 }
