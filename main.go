@@ -17,8 +17,10 @@ func main() {
 
 	fs := afero.NewOsFs()
 	fileFinder := NewFileFinder(config, fs)
+	fileProcessor := NewFileProcessor(fs)
 
-	processedFiles := fileFinder.DiscoverFiles()
+	filePaths := fileFinder.DiscoverFiles()
+	processedFiles := fileProcessor.ProcessFiles(filePaths)
 	stats := CalculateStats(processedFiles)
 	PrintDetailedOutput(stats)
 }
