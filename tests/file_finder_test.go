@@ -86,16 +86,34 @@ func TestFileFinder(t *testing.T) {
 			name: "Leading ./ is optional",
 			fileSystem: map[string]string{
 				"src/file1.go":   "package main",
-				"tests/file2.js": "console.log('Hello');",
+				"tests/file2.go": "console.log('Hello');",
 				"root/file3.go":  "package root",
 			},
 			config: BuildConfig(WithDirectories("src", "tests", "./root")),
 			expectedFiles: []string{
 				"src/file1.go",
-				"tests/file2.js",
+				"tests/file2.go",
 				"root/file3.go",
 			},
 			unexpectedFiles: []string{},
+		},
+		{
+			name: "Can ignore contents of subdirectories",
+			fileSystem: map[string]string{
+				"src/ignore/notfound.go":  "package main",
+				"src/file1.go":            "console.log('Hello');",
+				"src/dir/file2.go":        "package root",
+				"src/dir/ignore/file2.go": "package root",
+			},
+			config: BuildConfig(WithSkipDirs("src/ignore", "src/dir/ignore/")),
+			expectedFiles: []string{
+				"src/file1.go",
+				"src/dir/file2.go",
+			},
+			unexpectedFiles: []string{
+				"src/ignore/notfound.go",
+				"src/dir/ignore/file2.go",
+			},
 		},
 	}
 
