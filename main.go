@@ -2,6 +2,7 @@ package main
 
 import (
 	. "github.com/fargusplumdoodle/dump_dir/src"
+	"github.com/spf13/afero"
 	"os"
 )
 
@@ -13,7 +14,9 @@ func main() {
 		return
 	}
 	config := ParseArgs(args)
-	fileFinder := NewFileFinder(config)
+
+	fs := afero.NewOsFs()
+	fileFinder := NewFileFinder(config, fs)
 
 	processedFiles := fileFinder.DiscoverFiles()
 	stats := CalculateStats(processedFiles)
