@@ -69,7 +69,7 @@ To include ignored files, use the `--include-ignored` flag as shown in the examp
 
 You can easily install the latest version of dump_dir using curl. Run the following command in your terminal:
 ```bash
-curl -sfL https://raw.githubusercontent.com/fargusplumdoodle/dump_dir/main/install.sh | sh
+curl -sfL https://raw.githubusercontent.com/fargusplumdoodle/dump_dir/main/install.sh | bash
 ```
 
 This script will:
