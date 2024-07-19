@@ -10,65 +10,48 @@ Copy a bunch of files into your clipboard to provide context for LLMs
 - 📝 Respects .gitignore rules by default
 - 🚀 Fast! Can copy 1.6 million tokens in ~0.8 seconds
 
+_Example: dump_dir-ing this repo_
+
+![image](https://github.com/user-attachments/assets/ae8bc680-8da0-4f50-9092-6b6f89a2a9ad)
 
 ## 🚀 Usage
 
-```
-dump_dir <file_extension> <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ...
+
+```bash
+dump_dir [options] <file_extension1> [,<file_extension2>,...] <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ... [--include-ignored]
 ```
 
 Use 'any' as file_extension to match all files.
 
-### 📚 Examples
 
+#### 📚 Options
+
+- `-h`, `--help`: Display help information
+- `-v`, `--version`: Display the version of `dump_dir`
+- `-s <directory>`: Skip specified directory
+- `--include-ignored`: Include files that would normally be ignored (e.g., those in `.gitignore`)
+
+#### 📑 Examples
 
 Get all JS files, ignoring your node_modules and dist directories:
 ```bash
 dump_dir js ./project -s ./project/node_modules -s ./project/dist
 ```
-
-Get all files in your project directory of all types
+Get all files in your project directory of all types:
 ```bash
-dump_dir any ./project 
-```
-
+dump_dir any ./project
+````
 Get all Go, JavaScript, and Python files in your project:
 ```bash
 dump_dir go,js,py ./project
-````
-
+```
 Get all files, including those normally ignored (e.g., files in .gitignore):
 ```bash
 dump_dir any ./project --include-ignored
 ```
-
-This repo:
-```txt
-dump_dir any .
-Skipping ignored directory: .git
-Skipping ignored directory: .idea
-Skipping ignored directory: gitignore
-
-🔍 Matching files:
-  - dump_dir
-  - src/colors.go
-  - README.md
-  - .gitignore
-  - main.go
-  - go.mod
-  - src/ignore.go
-  - src/file_processing.go
-  - src/output.go
-  - go.sum
-  - .goreleaser.yaml
-  - src/types.go
-  - src/args.go
-  - .github/workflows/release.yml
-
-📚 Total files found: 14
-📝 Total lines across all files: 710
-
-✅ File contents have been copied to clipboard.
+Get specific files regardless of their extension:
+```bash
+dump_dir any ./README.md ./main.go
 ```
 
 ## 🔒 Gitignore Behavior
