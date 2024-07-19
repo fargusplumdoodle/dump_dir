@@ -13,9 +13,9 @@ func main() {
 		return
 	}
 	config := ParseArgs(args)
-	fileProcessor := NewFileProcessor(config)
+	fileFinder := NewFileFinder(config)
 
-	processedFiles := fileProcessor.ProcessDirectories()
+	processedFiles := fileFinder.DiscoverFiles()
 	stats := CalculateStats(processedFiles)
 	PrintDetailedOutput(stats)
 }

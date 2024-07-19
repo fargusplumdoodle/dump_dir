@@ -96,7 +96,7 @@ func (im *IgnoreManager) ShouldIgnore(path string) bool {
 	return false
 }
 
-func UpdateFileProcessor(fp *FileProcessor) error {
+func UpdateFileProcessor(fp *FileFinder) error {
 	im, err := NewIgnoreManager()
 	if err != nil {
 		return err
