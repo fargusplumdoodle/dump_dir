@@ -10,6 +10,8 @@ import (
 	"github.com/gobwas/glob"
 )
 
+var ExecCommand = exec.Command
+
 type IgnoreManager struct {
 	ignorePatterns []glob.Glob
 	ignoreDirs     []string
@@ -41,7 +43,7 @@ func (im *IgnoreManager) loadIgnorePatterns() error {
 }
 
 func getGlobalGitignorePath() (string, error) {
-	cmd := exec.Command("git", "config", "--global", "--get", "core.excludesfile")
+	cmd := ExecCommand("git", "config", "--global", "--get", "core.excludesfile")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err

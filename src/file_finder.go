@@ -15,88 +15,100 @@ type FileFinder struct {
 }
 
 func NewFileFinder(config Config, fs afero.Fs) *FileFinder {
-	fp := &FileFinder{Config: config, Fs: fs}
-	err := UpdateFileProcessor(fp)
-	if err != nil {
+	ff := &FileFinder{Config: config, Fs: fs}
+	if err := UpdateFileProcessor(ff); err != nil {
 		fmt.Printf(boldRed("❌ Error initializing IgnoreManager: %v\n"), err)
 	}
-	return fp
+	return ff
 }
 
 func (ff *FileFinder) DiscoverFiles() []string {
 	allDirs := ff.findAllDirectories()
 	filesToProcess := ff.findMatchingFiles(allDirs)
-	filesToProcess = append(filesToProcess, ff.Config.SpecificFiles...)
-	return filesToProcess
+	return append(filesToProcess, ff.Config.SpecificFiles...)
 }
 
 func (ff *FileFinder) findAllDirectories() []string {
 	var allDirs []string
-
 	for _, dir := range ff.Config.Directories {
-		normalizedDir := filepath.Clean(dir)
-
-		afero.Walk(ff.Fs, normalizedDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				PrintError("accessing path", path, err)
-				return nil
-			}
-
-			if info.IsDir() {
-				if !ff.Config.IncludeIgnored && ff.IgnoreManager.ShouldIgnore(path) {
-					fmt.Printf("Skipping ignored directory: %s\n", path)
-					return filepath.SkipDir
-				}
-
-				for _, skipDir := range ff.Config.SkipDirs {
-					normalizedSkipDir := filepath.Clean(skipDir)
-					if path == normalizedSkipDir || strings.HasPrefix(path, normalizedSkipDir+string(os.PathSeparator)) {
-						fmt.Printf("Skipping directory: %s\n", path)
-						return filepath.SkipDir
-					}
-				}
-
-				allDirs = append(allDirs, path)
-			}
-			return nil
-		})
+		ff.walkDirectory(dir, &allDirs)
 	}
-
 	return allDirs
+}
+
+func (ff *FileFinder) walkDirectory(dir string, allDirs *[]string) {
+	afero.Walk(ff.Fs, filepath.Clean(dir), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			PrintError("accessing path", path, err)
+			return nil
+		}
+		if !info.IsDir() {
+			return nil
+		}
+		if ff.shouldSkipDirectory(path) {
+			return filepath.SkipDir
+		}
+		*allDirs = append(*allDirs, path)
+		return nil
+	})
+}
+
+func (ff *FileFinder) shouldSkipDirectory(path string) bool {
+	if !ff.Config.IncludeIgnored && ff.IgnoreManager.ShouldIgnore(path) {
+		fmt.Printf("Skipping ignored directory: %s\n", path)
+		return true
+	}
+	for _, skipDir := range ff.Config.SkipDirs {
+		if ff.isSubdirectory(path, skipDir) {
+			fmt.Printf("Skipping directory: %s\n", path)
+			return true
+		}
+	}
+	return false
+}
+
+func (ff *FileFinder) isSubdirectory(path, parentDir string) bool {
+	normalizedParent := filepath.Clean(parentDir)
+	return path == normalizedParent || strings.HasPrefix(path, normalizedParent+string(os.PathSeparator))
 }
 
 func (ff *FileFinder) findMatchingFiles(dirs []string) []string {
 	var matchingFiles []string
-
 	for _, dir := range dirs {
-		normalizedDir := filepath.Clean(dir)
-		files, err := afero.ReadDir(ff.Fs, normalizedDir)
+		files, err := afero.ReadDir(ff.Fs, filepath.Clean(dir))
 		if err != nil {
-			PrintError("reading directory", normalizedDir, err)
+			PrintError("reading directory", dir, err)
 			continue
 		}
-
 		for _, file := range files {
 			if !file.IsDir() {
-				filePath := filepath.Join(normalizedDir, file.Name())
-				shouldSkip := false
-				for _, skipDir := range ff.Config.SkipDirs {
-					normalizedSkipDir := filepath.Clean(skipDir)
-					if strings.HasPrefix(filePath, normalizedSkipDir+string(os.PathSeparator)) {
-						shouldSkip = true
-						break
-					}
-				}
-				if !shouldSkip && (ff.Config.IncludeIgnored || !ff.IgnoreManager.ShouldIgnore(filePath)) {
-					if ff.matchesExtensions(file.Name()) {
-						matchingFiles = append(matchingFiles, filePath)
-					}
-				}
+				ff.processFile(dir, file, &matchingFiles)
 			}
 		}
 	}
-
 	return matchingFiles
+}
+
+func (ff *FileFinder) processFile(dir string, file os.FileInfo, matchingFiles *[]string) {
+	filePath := filepath.Join(dir, file.Name())
+	if ff.shouldProcessFile(filePath) {
+		*matchingFiles = append(*matchingFiles, filePath)
+	}
+}
+
+func (ff *FileFinder) shouldProcessFile(filePath string) bool {
+	return !ff.isInSkipDirs(filePath) &&
+		(ff.Config.IncludeIgnored || !ff.IgnoreManager.ShouldIgnore(filePath)) &&
+		ff.matchesExtensions(filepath.Base(filePath))
+}
+
+func (ff *FileFinder) isInSkipDirs(filePath string) bool {
+	for _, skipDir := range ff.Config.SkipDirs {
+		if ff.isSubdirectory(filePath, skipDir) {
+			return true
+		}
+	}
+	return false
 }
 
 func (ff *FileFinder) matchesExtensions(filename string) bool {
