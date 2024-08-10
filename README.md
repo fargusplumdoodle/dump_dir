@@ -30,6 +30,7 @@ Use 'any' as file_extension to match all files.
 - `-v`, `--version`: Display the version of `dump_dir`
 - `-s <directory>`: Skip specified directory
 - `--include-ignored`: Include files that would normally be ignored (e.g., those in `.gitignore`)
+- `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to bytes.
 
 #### 📑 Examples
 
@@ -53,6 +54,10 @@ Get specific files regardless of their extension:
 ```bash
 dump_dir any ./README.md ./main.go
 ```
+Set a maximum file size of 1MB:
+```bash
+dump_dir go ./project --max-filesize 1MB
+```
 
 ## 🔒 Gitignore Behavior
 By default, dump_dir respects your project's .gitignore rules. This means:
@@ -65,7 +70,7 @@ To include ignored files, use the `--include-ignored` flag as shown in the examp
 
 ## 👉 Special Files Behavior
 
-By default, files are too large if they are >500KB. 
+By default, files are too large if they are >500KB. You can adjust this limit using the `-m` or `--max-filesize` option.
 
 | File type       | Output                          |
 |-----------------|---------------------------------|
