@@ -6,7 +6,7 @@ import . "github.com/fargusplumdoodle/dump_dir/src"
 type ConfigOption func(*Config)
 
 // BuildConfig creates a Config with default values and applies the given options
-func BuildConfig(options ...ConfigOption) Config {
+func BuildConfig(options ...ConfigOption) *Config {
 	config := Config{
 		Action:         "dump_dir",
 		Extensions:     []string{},
@@ -14,13 +14,14 @@ func BuildConfig(options ...ConfigOption) Config {
 		SkipDirs:       []string{},
 		SpecificFiles:  []string{},
 		IncludeIgnored: false,
+		MaxFileSize:    500 * 1024, // Default to 500KB
 	}
 
 	for _, option := range options {
 		option(&config)
 	}
 
-	return config
+	return &config
 }
 
 func WithAction(action string) ConfigOption {
@@ -61,5 +62,11 @@ func WithSpecificFiles(specificFiles ...string) ConfigOption {
 func WithIncludeIgnored(includeIgnored bool) ConfigOption {
 	return func(c *Config) {
 		c.IncludeIgnored = includeIgnored
+	}
+}
+
+func WithMaxFileSize(maxFileSize int64) ConfigOption {
+	return func(c *Config) {
+		c.MaxFileSize = maxFileSize
 	}
 }
