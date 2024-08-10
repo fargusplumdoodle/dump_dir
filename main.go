@@ -42,7 +42,7 @@ func main() {
 func performDumpDir(config Config) {
 	fs := afero.NewOsFs()
 	fileFinder := NewFileFinder(config, fs)
-	fileProcessor := NewFileProcessor(fs)
+	fileProcessor := NewFileProcessor(fs, config)
 
 	filePaths := fileFinder.DiscoverFiles()
 	processedFiles := fileProcessor.ProcessFiles(filePaths)
