@@ -63,6 +63,17 @@ Common version control directories (like .git) are automatically ignored.
 
 To include ignored files, use the `--include-ignored` flag as shown in the examples above.
 
+## 👉 Special Files Behavior
+
+By default, files are too large if they are >500KB. 
+
+| File type       | Output                          |
+|-----------------|---------------------------------|
+| Binary files    | `<BINARY SKIPPED>`              |
+| File too large  | `<FILE TOO LARGE: %d bytes>`    |
+| Empty files     | `<EMPTY FILE>`                  |
+
+
 ## 🛠️ Installation
 
 **Mac and Linux**
