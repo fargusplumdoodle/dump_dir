@@ -12,6 +12,7 @@ type Config struct {
 	SkipDirs       []string
 	SpecificFiles  []string
 	IncludeIgnored bool
+	MaxFileSize    int64
 }
 
 type Stats struct {

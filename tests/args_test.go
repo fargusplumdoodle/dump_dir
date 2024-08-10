@@ -13,7 +13,8 @@ func TestParseArgs(t *testing.T) {
 	tests := []struct {
 		name           string
 		args           []string
-		expectedConfig Config
+		expectedConfig *Config
+		expectedError  error
 	}{
 		{
 			name: "Default dump_dir action",
@@ -79,35 +80,86 @@ func TestParseArgs(t *testing.T) {
 				WithSpecificFiles("./config.go"),
 			),
 		},
+		{
+			name: "Max filesize in Bytes",
+			args: []string{"go", "./src", "--max-filesize", "1000B"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithExtensions("go"),
+				WithDirectories("./src"),
+				WithMaxFileSize(1000),
+			),
+		},
+		{
+			name: "Max filesize in Kilobytes",
+			args: []string{"go", "./src", "-m", "500KB"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithExtensions("go"),
+				WithDirectories("./src"),
+				WithMaxFileSize(500*1024),
+			),
+		},
+		{
+			name: "Max filesize in Megabytes",
+			args: []string{"go", "./src", "--max-filesize", "2MB"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithExtensions("go"),
+				WithDirectories("./src"),
+				WithMaxFileSize(2*1024*1024),
+			),
+		},
+		{
+			name:           "Invalid max filesize",
+			args:           []string{"go", "./src", "--max-filesize", "invalid"},
+			expectedConfig: nil,
+			expectedError:  ErrInvalidMaxFileSize{Value: "invalid"},
+		},
+		{
+			name:           "Missing max filesize value",
+			args:           []string{"go", "./src", "--max-filesize"},
+			expectedConfig: nil,
+			expectedError:  ErrInvalidMaxFileSize{Value: ""},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := ParseArgs(tt.args)
-			if diff := cmp.Diff(tt.expectedConfig, config); diff != "" {
-				t.Errorf("ParseArgs() mismatch (-want +got):\n%s", diff)
+			config, err := ParseArgs(tt.args)
+
+			if tt.expectedError != nil {
+				if err == nil {
+					t.Errorf("Expected error %v, but got nil", tt.expectedError)
+				} else if err != tt.expectedError {
+					t.Errorf("Expected error %v, but got %v", tt.expectedError, err)
+				}
+			} else if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			if tt.expectedConfig != nil {
+				if diff := cmp.Diff(*tt.expectedConfig, config); diff != "" {
+					t.Errorf("ParseArgs() mismatch (-want +got):\n%s", diff)
+				}
 			}
 		})
 	}
 
 	t.Run("Filesystem-aware specific files and directories", func(t *testing.T) {
-		// Set up a mock file system
 		fs := afero.NewMemMapFs()
 		afero.WriteFile(fs, "/project/src/main.go", []byte("package main"), 0644)
 		afero.WriteFile(fs, "/project/config.json", []byte("{}"), 0644)
 		fs.MkdirAll("/project/tests", 0755)
 
-		// Store the original os.Stat function
 		originalStat := OsStat
-		// Replace os.Stat with our mock version
 		OsStat = func(name string) (os.FileInfo, error) {
 			return fs.Stat(name)
 		}
-		// Restore the original os.Stat function after the test
 		defer func() { OsStat = originalStat }()
 
 		args := []string{"go,json", "/project/src/main.go", "/project/config.json", "/project/tests"}
-		config := ParseArgs(args)
+		config, err := ParseArgs(args)
 
 		expectedConfig := BuildConfig(
 			WithAction("dump_dir"),
@@ -115,6 +167,10 @@ func TestParseArgs(t *testing.T) {
 			WithSpecificFiles("/project/src/main.go", "/project/config.json"),
 			WithDirectories("/project/tests"),
 		)
+
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
 
 		if diff := cmp.Diff(expectedConfig, config); diff != "" {
 			t.Errorf("ParseArgs() mismatch (-want +got):\n%s", diff)

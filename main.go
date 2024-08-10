@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	. "github.com/fargusplumdoodle/dump_dir/src"
 	"github.com/spf13/afero"
 	"os"
@@ -19,7 +20,12 @@ func main() {
 		PrintUsage()
 		return
 	}
-	config := ParseArgs(args)
+	config, err := ParseArgs(args)
+	if err != nil {
+		fmt.Printf("Error parsing arguments: %v\n", err)
+		PrintUsage()
+		os.Exit(1)
+	}
 
 	switch config.Action {
 	case "help":
