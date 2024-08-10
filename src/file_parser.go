@@ -13,11 +13,12 @@ const FilesPerGoroutine = 1
 const MaxFileSize = 500 * 1024 // 500 KB
 
 type FileProcessor struct {
-	Fs afero.Fs
+	Fs     afero.Fs
+	Config Config
 }
 
-func NewFileProcessor(fs afero.Fs) *FileProcessor {
-	return &FileProcessor{Fs: fs}
+func NewFileProcessor(fs afero.Fs, config Config) *FileProcessor {
+	return &FileProcessor{Fs: fs, Config: config}
 }
 
 func (fp *FileProcessor) ProcessFiles(files []string) []FileInfo {
@@ -72,7 +73,7 @@ func (fp *FileProcessor) processFile(path string) (FileInfo, error) {
 		return FileInfo{Path: path, Contents: "<EMPTY FILE>"}, nil
 	}
 
-	if info.Size() > MaxFileSize {
+	if info.Size() > fp.Config.MaxFileSize {
 		return FileInfo{Path: path, Contents: fmt.Sprintf("<FILE TOO LARGE: %d bytes>", info.Size())}, nil
 	}
 
@@ -86,7 +87,7 @@ func (fp *FileProcessor) processFile(path string) (FileInfo, error) {
 
 	var contents strings.Builder
 	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 1024*1024), MaxFileSize)
+	scanner.Buffer(make([]byte, 1024*1024), int(fp.Config.MaxFileSize))
 
 	for scanner.Scan() {
 		contents.WriteString(scanner.Text() + "\n")
