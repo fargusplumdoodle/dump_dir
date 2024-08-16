@@ -2,13 +2,16 @@ package src
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
 func CalculateStats(processedFiles []FileInfo) Stats {
 	var totalLines, estimatedTokens int
 
-	for _, fileInfo := range processedFiles {
+	sortedFiles := SortFileList(processedFiles)
+
+	for _, fileInfo := range sortedFiles {
 		totalLines += strings.Count(fileInfo.Contents, "\n")
 		estimatedTokens += estimateTokens(fileInfo.Contents)
 	}
@@ -17,7 +20,7 @@ func CalculateStats(processedFiles []FileInfo) Stats {
 		TotalFiles:      len(processedFiles),
 		TotalLines:      totalLines,
 		EstimatedTokens: estimatedTokens,
-		ProcessedFiles:  processedFiles,
+		ProcessedFiles:  sortedFiles,
 	}
 }
 
@@ -46,4 +49,24 @@ func formatTokenCount(tokens int) string {
 	} else {
 		return fmt.Sprintf("%dk", tokens/1000)
 	}
+}
+
+func SortFileList(files []FileInfo) []FileInfo {
+	sort.Slice(files, func(i, j int) bool {
+		// Split the paths into components
+		pathI := strings.Split(files[i].Path, "/")
+		pathJ := strings.Split(files[j].Path, "/")
+
+		// Compare each component
+		for k := 0; k < len(pathI) && k < len(pathJ); k++ {
+			if pathI[k] != pathJ[k] {
+				return pathI[k] < pathJ[k]
+			}
+		}
+
+		// If all components are the same up to this point, shorter path comes first
+		return len(pathI) < len(pathJ)
+	})
+
+	return files
 }
