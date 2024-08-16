@@ -50,7 +50,7 @@ func TestParseArgs(t *testing.T) {
 		},
 		{
 			name: "Skip directories",
-			args: []string{"go", "./src", "-s", "./src/vendor", "-s", "./src/generated"},
+			args: []string{"go", "./src", "-s", "./src/vendor", "--skip", "./src/generated"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
 				WithExtensions("go"),

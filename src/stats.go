@@ -58,7 +58,6 @@ func printFileList(summary *strings.Builder, heading string, files []FileInfo) {
 	for _, file := range files {
 		summary.WriteString(fmt.Sprintf("- %s\n", file.Path))
 	}
-	summary.WriteString("\n")
 }
 
 func estimateTokens(content string) int {

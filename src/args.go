@@ -58,7 +58,7 @@ func ParseArgs(args []string) (Config, error) {
 		arg := args[i]
 		if arg == "--include-ignored" {
 			config.IncludeIgnored = true
-		} else if arg == "-s" {
+		} else if arg == "-s" || arg == "--skip" {
 			skipMode = true
 		} else if arg == "--max-filesize" || arg == "-m" {
 			if i+1 < len(args) {

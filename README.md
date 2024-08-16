@@ -28,7 +28,7 @@ Use 'any' as file_extension to match all files.
 
 - `-h`, `--help`: Display help information
 - `-v`, `--version`: Display the version of `dump_dir`
-- `-s <directory>`: Skip specified directory
+- `-s <directory>, --skip <directory>`: Skip specified directory
 - `--include-ignored`: Include files that would normally be ignored (e.g., those in `.gitignore`)
 - `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to bytes.
 
@@ -36,7 +36,7 @@ Use 'any' as file_extension to match all files.
 
 Get all JS files, ignoring your node_modules and dist directories:
 ```bash
-dump_dir js ./project -s ./project/node_modules -s ./project/dist
+dump_dir js ./project -s ./project/node_modules --skip ./project/dist
 ```
 Get all files in your project directory of all types:
 ```bash
