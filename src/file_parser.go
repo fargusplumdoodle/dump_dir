@@ -10,7 +10,6 @@ import (
 )
 
 const FilesPerGoroutine = 1
-const MaxFileSize = 500 * 1024 // 500 KB
 
 type FileProcessor struct {
 	Fs     afero.Fs
@@ -70,11 +69,11 @@ func (fp *FileProcessor) processFile(path string) (FileInfo, error) {
 		return FileInfo{}, fmt.Errorf("getting file info: %w", err)
 	}
 	if info.Size() == 0 {
-		return FileInfo{Path: path, Contents: "<EMPTY FILE>"}, nil
+		return FileInfo{Path: path, Contents: "<EMPTY FILE>", Status: StatusParsed}, nil
 	}
 
 	if info.Size() > fp.Config.MaxFileSize {
-		return FileInfo{Path: path, Contents: fmt.Sprintf("<FILE TOO LARGE: %d bytes>", info.Size())}, nil
+		return FileInfo{Status: StatusSkippedTooLarge, Path: path, Contents: fmt.Sprintf("<FILE TOO LARGE: %d bytes>", info.Size())}, nil
 	}
 
 	isBinary, err := fp.fileIsBinary(file)
@@ -82,7 +81,7 @@ func (fp *FileProcessor) processFile(path string) (FileInfo, error) {
 		return FileInfo{}, fmt.Errorf("checking if file is binary: %w", err)
 	}
 	if isBinary {
-		return FileInfo{Path: path, Contents: "<BINARY SKIPPED>"}, nil
+		return FileInfo{Status: StatusSkippedBinary, Path: path, Contents: "<BINARY SKIPPED>"}, nil
 	}
 
 	var contents strings.Builder
@@ -100,7 +99,7 @@ func (fp *FileProcessor) processFile(path string) (FileInfo, error) {
 		return FileInfo{}, fmt.Errorf("scanning file: %w", err)
 	}
 
-	return FileInfo{Path: path, Contents: contents.String()}, nil
+	return FileInfo{Status: StatusParsed, Path: path, Contents: contents.String()}, nil
 }
 
 func (fp *FileProcessor) fileIsBinary(file afero.File) (bool, error) {

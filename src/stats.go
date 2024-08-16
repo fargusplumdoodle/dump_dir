@@ -8,12 +8,21 @@ import (
 
 func CalculateStats(processedFiles []FileInfo) Stats {
 	var totalLines, estimatedTokens int
+	var skippedLarge, skippedBinary, parsedFiles []FileInfo
 
 	sortedFiles := SortFileList(processedFiles)
 
 	for _, fileInfo := range sortedFiles {
-		totalLines += strings.Count(fileInfo.Contents, "\n")
-		estimatedTokens += estimateTokens(fileInfo.Contents)
+		switch fileInfo.Status {
+		case StatusParsed:
+			totalLines += strings.Count(fileInfo.Contents, "\n")
+			estimatedTokens += estimateTokens(fileInfo.Contents)
+			parsedFiles = append(parsedFiles, fileInfo)
+		case StatusSkippedTooLarge:
+			skippedLarge = append(skippedLarge, fileInfo)
+		case StatusSkippedBinary:
+			skippedBinary = append(skippedBinary, fileInfo)
+		}
 	}
 
 	return Stats{
@@ -21,20 +30,35 @@ func CalculateStats(processedFiles []FileInfo) Stats {
 		TotalLines:      totalLines,
 		EstimatedTokens: estimatedTokens,
 		ProcessedFiles:  sortedFiles,
+		ParsedFiles:     parsedFiles,
+		SkippedLarge:    skippedLarge,
+		SkippedBinary:   skippedBinary,
 	}
 }
 
 func DisplayStats(stats Stats) string {
 	var summary strings.Builder
-	summary.WriteString(boldMagenta("\n🔍 Matching files:\n"))
-	for _, file := range stats.ProcessedFiles {
-		summary.WriteString(fmt.Sprintf("  - %s\n", file.Path))
-	}
+	printFileList(&summary, "🔍 Parsed files:", stats.ParsedFiles)
+	printFileList(&summary, "🪨 Skipped large files:", stats.SkippedLarge)
+	printFileList(&summary, "💽 Skipped binary files:", stats.SkippedBinary)
+
 	summary.WriteString(boldCyan(fmt.Sprintf("\n📚 Total files found: %d\n", stats.TotalFiles)))
-	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all files: %d\n", stats.TotalLines)))
+	summary.WriteString(boldCyan(fmt.Sprintf("📝 Total lines across all parsed files: %d\n", stats.TotalLines)))
 	summary.WriteString(boldCyan(fmt.Sprintf("🔢 Estimated tokens: %s\n\n", formatTokenCount(stats.EstimatedTokens))))
 
 	return summary.String()
+}
+
+func printFileList(summary *strings.Builder, heading string, files []FileInfo) {
+	if len(files) == 0 {
+		return
+	}
+	summary.WriteString(boldMagenta(fmt.Sprintf("\n%s\n", heading)))
+
+	for _, file := range files {
+		summary.WriteString(fmt.Sprintf("- %s\n", file.Path))
+	}
+	summary.WriteString("\n")
 }
 
 func estimateTokens(content string) int {
