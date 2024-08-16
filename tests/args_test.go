@@ -172,7 +172,7 @@ func TestParseArgs(t *testing.T) {
 			t.Errorf("Unexpected error: %v", err)
 		}
 
-		if diff := cmp.Diff(expectedConfig, config); diff != "" {
+		if diff := cmp.Diff(expectedConfig, &config); diff != "" {
 			t.Errorf("ParseArgs() mismatch (-want +got):\n%s", diff)
 		}
 	})
