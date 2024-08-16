@@ -18,10 +18,9 @@ func TestParseArgs(t *testing.T) {
 	}{
 		{
 			name: "Default dump_dir action",
-			args: []string{"go", "./src"},
+			args: []string{"./src"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go"),
 				WithDirectories("./src"),
 			),
 		},
@@ -40,8 +39,8 @@ func TestParseArgs(t *testing.T) {
 			),
 		},
 		{
-			name: "Multiple extensions and directories",
-			args: []string{"go,js,py", "./src", "./tests"},
+			name: "Multiple extensions and directories shorthand",
+			args: []string{"./src", "./tests", "-e", "go,js,py"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
 				WithExtensions("go", "js", "py"),
@@ -49,31 +48,47 @@ func TestParseArgs(t *testing.T) {
 			),
 		},
 		{
-			name: "Skip directories",
-			args: []string{"go", "./src", "-s", "./src/vendor", "--skip", "./src/generated"},
+			name: "Multiple extension arguments",
+			args: []string{"./src", "./tests", "-e", "go", "--extension", "js,py"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithExtensions("go", "js", "py"),
+				WithDirectories("./src", "./tests"),
+			),
+		},
+		{
+			name: "Extensions first",
+			args: []string{"-e", "go", "./src", "./tests"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
 				WithExtensions("go"),
+				WithDirectories("./src", "./tests"),
+			),
+		},
+		{
+			name: "Skip directories",
+			args: []string{"./src", "-s", "./src/vendor", "--skip", "./src/generated"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
 				WithDirectories("./src"),
 				WithSkipDirs("./src/vendor", "./src/generated"),
 			),
 		},
 		{
 			name: "Include ignored files",
-			args: []string{"go", "./src", "--include-ignored"},
+			args: []string{"./src", "--include-ignored"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go"),
 				WithDirectories("./src"),
 				WithIncludeIgnored(true),
 			),
 		},
 		{
 			name: "Complex case",
-			args: []string{"go,js", "./src", "./tests", "-s", "./src/vendor", "--include-ignored", "./config.go"},
+			args: []string{"-e", "go,js", "-e", "go", "./src", "./tests", "-s", "./src/vendor", "--include-ignored", "./config.go"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go", "js"),
+				WithExtensions("go", "js", "go"),
 				WithDirectories("./src", "./tests"),
 				WithSkipDirs("./src/vendor"),
 				WithIncludeIgnored(true),
@@ -82,7 +97,7 @@ func TestParseArgs(t *testing.T) {
 		},
 		{
 			name: "Max filesize in Bytes",
-			args: []string{"go", "./src", "--max-filesize", "1000B"},
+			args: []string{"-e", "go", "./src", "--max-filesize", "1000B"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
 				WithExtensions("go"),
@@ -92,33 +107,31 @@ func TestParseArgs(t *testing.T) {
 		},
 		{
 			name: "Max filesize in Kilobytes",
-			args: []string{"go", "./src", "-m", "500KB"},
+			args: []string{"./src", "-m", "500KB"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go"),
 				WithDirectories("./src"),
 				WithMaxFileSize(500*1024),
 			),
 		},
 		{
 			name: "Max filesize in Megabytes",
-			args: []string{"go", "./src", "--max-filesize", "2MB"},
+			args: []string{"./src", "--max-filesize", "2MB"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go"),
 				WithDirectories("./src"),
 				WithMaxFileSize(2*1024*1024),
 			),
 		},
 		{
 			name:           "Invalid max filesize",
-			args:           []string{"go", "./src", "--max-filesize", "invalid"},
+			args:           []string{"./src", "--max-filesize", "invalid"},
 			expectedConfig: nil,
 			expectedError:  ErrInvalidMaxFileSize{Value: "invalid"},
 		},
 		{
 			name:           "Missing max filesize value",
-			args:           []string{"go", "./src", "--max-filesize"},
+			args:           []string{"./src", "--max-filesize"},
 			expectedConfig: nil,
 			expectedError:  ErrInvalidMaxFileSize{Value: ""},
 		},
@@ -158,7 +171,7 @@ func TestParseArgs(t *testing.T) {
 		}
 		defer func() { OsStat = originalStat }()
 
-		args := []string{"go,json", "/project/src/main.go", "/project/config.json", "/project/tests"}
+		args := []string{"-e", "go,json", "/project/src/main.go", "/project/config.json", "/project/tests"}
 		config, err := ParseArgs(args)
 
 		expectedConfig := BuildConfig(
