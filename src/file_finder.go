@@ -113,7 +113,7 @@ func (ff *FileFinder) isInSkipDirs(filePath string) bool {
 }
 
 func (ff *FileFinder) matchesExtensions(filename string) bool {
-	if len(ff.Config.Extensions) == 1 && ff.Config.Extensions[0] == "any" {
+	if len(ff.Config.Extensions) == 0 {
 		return true
 	}
 	for _, ext := range ff.Config.Extensions {

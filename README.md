@@ -12,51 +12,51 @@ Copy a bunch of files into your clipboard to provide context for LLMs
 
 _Example: dump_dir-ing this repo_
 
-![image](https://github.com/user-attachments/assets/ae8bc680-8da0-4f50-9092-6b6f89a2a9ad)
+![image](https://github.com/user-attachments/assets/17e52273-871b-44a0-8f0b-10f91eb4ad25)
+
+
 
 ## 🚀 Usage
 
 
 ```bash
-dump_dir [options] <file_extension1> [,<file_extension2>,...] <directory1> [directory2] ... [-s <skip_directory1>] [-s <skip_directory2>] ... [--include-ignored]
+dump_dir <directory1> [directory2] ...
 ```
-
-Use 'any' as file_extension to match all files.
-
 
 #### 📚 Options
 
 - `-h`, `--help`: Display help information
 - `-v`, `--version`: Display the version of `dump_dir`
-- `-s <directory>`: Skip specified directory
+- `-s <directory>, --skip <directory>`: Skip specified directory
+- `-e <extension[s]>, --extension <extension[s]>`: Filter by specific file extensions
 - `--include-ignored`: Include files that would normally be ignored (e.g., those in `.gitignore`)
 - `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to bytes.
 
 #### 📑 Examples
 
-Get all JS files, ignoring your node_modules and dist directories:
-```bash
-dump_dir js ./project -s ./project/node_modules -s ./project/dist
-```
 Get all files in your project directory of all types:
 ```bash
-dump_dir any ./project
+dump_dir ./project
 ````
+Get all JS files, ignoring your dist directory:
+```bash
+dump_dir ./project -e js  --skip ./project/dist
+```
 Get all Go, JavaScript, and Python files in your project:
 ```bash
-dump_dir go,js,py ./project
+dump_dir ./project --extension go,js,py 
 ```
 Get all files, including those normally ignored (e.g., files in .gitignore):
 ```bash
-dump_dir any ./project --include-ignored
+dump_dir ./project --include-ignored
 ```
 Get specific files regardless of their extension:
 ```bash
-dump_dir any ./README.md ./main.go
+dump_dir ./README.md ./main.go --extension py
 ```
 Set a maximum file size of 1MB:
 ```bash
-dump_dir go ./project --max-filesize 1MB
+dump_dir ./project --max-filesize 1MB
 ```
 
 ## 🔒 Gitignore Behavior
@@ -71,6 +71,7 @@ To include ignored files, use the `--include-ignored` flag as shown in the examp
 ## 👉 Special Files Behavior
 
 By default, files are too large if they are >500KB. You can adjust this limit using the `-m` or `--max-filesize` option.
+If any files are skipped for any reason, `dump_dir` will inform you.
 
 | File type       | Output                          |
 |-----------------|---------------------------------|
@@ -99,6 +100,7 @@ Alternatively, you can manually download the latest release from the GitHub Rele
 
 For Windows users, please download the latest release from the GitHub Releases page and add it to your PATH manually.
 
+
 ## 💡 Tips for LLM Development
 
 - 📁 Use `dump_dir` to quickly gather context from multiple project files
@@ -107,7 +109,7 @@ For Windows users, please download the latest release from the GitHub Releases p
 
 ## 🤝 Contributing
 
-Raise an issue or make a PR, I whipped this up real quick so there's probably a lot of room for improvement.
+Raise an issue or make a PR. Run tests with `go test ./tests/...`
 
 ## 📜 License
 

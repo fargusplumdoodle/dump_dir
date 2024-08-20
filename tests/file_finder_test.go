@@ -10,7 +10,7 @@ func TestFileFinder(t *testing.T) {
 	tests := []struct {
 		name            string
 		fileSystem      map[string]string
-		config          Config
+		config          *Config
 		expectedFiles   []string
 		unexpectedFiles []string
 	}{
@@ -138,7 +138,7 @@ func TestFileFinder(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := setupTestFileSystem(tt.fileSystem)
-			fileFinder := NewFileFinder(tt.config, fs)
+			fileFinder := NewFileFinder(*tt.config, fs)
 
 			foundFiles := fileFinder.DiscoverFiles()
 

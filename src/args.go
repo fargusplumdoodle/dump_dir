@@ -28,7 +28,7 @@ func ParseArgs(args []string) (Config, error) {
 		SkipDirs:      []string{},
 		SpecificFiles: []string{},
 		Directories:   []string{},
-		Extensions:    []string{},
+		Extensions:    []string{}, // Empty slice means all extensions
 		MaxFileSize:   500 * 1024, // Default to 500KB
 	}
 
@@ -42,25 +42,23 @@ func ParseArgs(args []string) (Config, error) {
 		return config, nil
 	}
 
-	// Check for help flag anywhere in the arguments
-	for _, arg := range args {
-		if arg == "--help" || arg == "-h" {
+	skipMode := false
+	extensionMode := false
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		switch arg {
+		case "--help", "-h":
 			config.Action = "help"
 			return config, nil
-		}
-	}
-
-	// If we're here, it's the default dump_dir action
-	config.Extensions = strings.Split(args[0], ",")
-
-	skipMode := false
-	for i := 1; i < len(args); i++ {
-		arg := args[i]
-		if arg == "--include-ignored" {
+		case "--include-ignored":
 			config.IncludeIgnored = true
-		} else if arg == "-s" {
+		case "-s", "--skip":
 			skipMode = true
-		} else if arg == "--max-filesize" || arg == "-m" {
+		case "-e", "--extension":
+			extensionMode = true
+		case "--max-filesize", "-m":
 			if i+1 < len(args) {
 				size, err := parseFileSize(args[i+1])
 				if err != nil {
@@ -71,26 +69,30 @@ func ParseArgs(args []string) (Config, error) {
 			} else {
 				return config, ErrInvalidMaxFileSize{Value: ""}
 			}
-		} else if skipMode {
-			config.SkipDirs = append(config.SkipDirs, arg)
-			skipMode = false
-		} else {
-			if fileInfo, err := OsStat(arg); err == nil {
-				if fileInfo.IsDir() {
-					config.Directories = append(config.Directories, arg)
-				} else {
-					config.SpecificFiles = append(config.SpecificFiles, arg)
-				}
+		default:
+			if skipMode {
+				config.SkipDirs = append(config.SkipDirs, arg)
+				skipMode = false
+			} else if extensionMode {
+				config.Extensions = append(config.Extensions, strings.Split(arg, ",")...)
+				extensionMode = false
 			} else {
-				// If we can't stat it, assume it's a directory
-				config.Directories = append(config.Directories, arg)
+				if fileInfo, err := OsStat(arg); err == nil {
+					if fileInfo.IsDir() {
+						config.Directories = append(config.Directories, arg)
+					} else {
+						config.SpecificFiles = append(config.SpecificFiles, arg)
+					}
+				} else {
+					// If we can't stat it, assume it's a directory
+					config.Directories = append(config.Directories, arg)
+				}
 			}
 		}
 	}
 
 	return config, nil
 }
-
 func parseFileSize(sizeStr string) (int64, error) {
 	sizeStr = strings.ToUpper(sizeStr)
 	var multiplier int64 = 1

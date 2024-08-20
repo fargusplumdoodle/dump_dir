@@ -14,7 +14,7 @@ func TestIgnoreFunctionality(t *testing.T) {
 		files           []string
 		globalGitignore string
 		localGitignore  string
-		config          Config
+		config          *Config
 		expectedFiles   []string
 		unexpectedFiles []string
 	}{
@@ -102,7 +102,7 @@ func TestIgnoreFunctionality(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := setupIgnoreTestEnvironment(tt.files, tt.globalGitignore, tt.localGitignore)
-			fileFinder := NewFileFinder(tt.config, fs)
+			fileFinder := NewFileFinder(*tt.config, fs)
 
 			foundFiles := fileFinder.DiscoverFiles()
 
