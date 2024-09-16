@@ -1,18 +1,6 @@
 package src
 
-type FileStatus string
-
-const (
-	StatusParsed          FileStatus = "PARSED"
-	StatusSkippedBinary   FileStatus = "SKIPPED_BINARY"
-	StatusSkippedTooLarge FileStatus = "SKIPPED_TOO_LARGE"
-)
-
-type FileInfo struct {
-	Path     string
-	Contents string
-	Status   FileStatus
-}
+import "github.com/fargusplumdoodle/dump_dir/src/prompt"
 
 type Config struct {
 	Action         string
@@ -28,8 +16,8 @@ type Stats struct {
 	TotalFiles      int
 	TotalLines      int
 	EstimatedTokens int
-	ProcessedFiles  []FileInfo
-	ParsedFiles     []FileInfo
-	SkippedLarge    []FileInfo
-	SkippedBinary   []FileInfo
+	ProcessedFiles  []prompt.FileInfo
+	ParsedFiles     []prompt.FileInfo
+	SkippedLarge    []prompt.FileInfo
+	SkippedBinary   []prompt.FileInfo
 }

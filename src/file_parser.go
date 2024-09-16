@@ -3,6 +3,7 @@ package src
 import (
 	"bufio"
 	"fmt"
+	"github.com/fargusplumdoodle/dump_dir/src/prompt"
 	"github.com/spf13/afero"
 	"io"
 	"strings"
@@ -20,9 +21,9 @@ func NewFileProcessor(fs afero.Fs, config Config) *FileProcessor {
 	return &FileProcessor{Fs: fs, Config: config}
 }
 
-func (fp *FileProcessor) ProcessFiles(files []string) []FileInfo {
+func (fp *FileProcessor) ProcessFiles(files []string) []prompt.FileInfo {
 	var wg sync.WaitGroup
-	fileInfoChan := make(chan FileInfo, len(files))
+	fileInfoChan := make(chan prompt.FileInfo, len(files))
 
 	for i := 0; i < len(files); i += FilesPerGoroutine {
 		end := i + FilesPerGoroutine
@@ -49,7 +50,7 @@ func (fp *FileProcessor) ProcessFiles(files []string) []FileInfo {
 		close(fileInfoChan)
 	}()
 
-	var processedFiles []FileInfo
+	var processedFiles []prompt.FileInfo
 	for fileInfo := range fileInfoChan {
 		processedFiles = append(processedFiles, fileInfo)
 	}
@@ -57,31 +58,31 @@ func (fp *FileProcessor) ProcessFiles(files []string) []FileInfo {
 	return processedFiles
 }
 
-func (fp *FileProcessor) processFile(path string) (FileInfo, error) {
+func (fp *FileProcessor) processFile(path string) (prompt.FileInfo, error) {
 	file, err := fp.Fs.Open(path)
 	if err != nil {
-		return FileInfo{}, fmt.Errorf("opening file: %w", err)
+		return prompt.FileInfo{}, fmt.Errorf("opening file: %w", err)
 	}
 	defer file.Close()
 
 	info, err := file.Stat()
 	if err != nil {
-		return FileInfo{}, fmt.Errorf("getting file info: %w", err)
+		return prompt.FileInfo{}, fmt.Errorf("getting file info: %w", err)
 	}
 	if info.Size() == 0 {
-		return FileInfo{Path: path, Contents: "<EMPTY FILE>", Status: StatusParsed}, nil
+		return prompt.FileInfo{Path: path, Contents: "<EMPTY FILE>", Status: prompt.StatusParsed}, nil
 	}
 
 	if info.Size() > fp.Config.MaxFileSize {
-		return FileInfo{Status: StatusSkippedTooLarge, Path: path, Contents: fmt.Sprintf("<FILE TOO LARGE: %d bytes>", info.Size())}, nil
+		return prompt.FileInfo{Status: prompt.StatusSkippedTooLarge, Path: path, Contents: fmt.Sprintf("<FILE TOO LARGE: %d bytes>", info.Size())}, nil
 	}
 
 	isBinary, err := fp.fileIsBinary(file)
 	if err != nil {
-		return FileInfo{}, fmt.Errorf("checking if file is binary: %w", err)
+		return prompt.FileInfo{}, fmt.Errorf("checking if file is binary: %w", err)
 	}
 	if isBinary {
-		return FileInfo{Status: StatusSkippedBinary, Path: path, Contents: "<BINARY SKIPPED>"}, nil
+		return prompt.FileInfo{Status: prompt.StatusSkippedBinary, Path: path, Contents: "<BINARY SKIPPED>"}, nil
 	}
 
 	var contents strings.Builder
@@ -94,12 +95,12 @@ func (fp *FileProcessor) processFile(path string) (FileInfo, error) {
 
 	if err := scanner.Err(); err != nil {
 		if err == bufio.ErrTooLong {
-			return FileInfo{Path: path, Contents: "<FILE EXCEEDS BUFFER SIZE>"}, nil
+			return prompt.FileInfo{Path: path, Contents: "<FILE EXCEEDS BUFFER SIZE>"}, nil
 		}
-		return FileInfo{}, fmt.Errorf("scanning file: %w", err)
+		return prompt.FileInfo{}, fmt.Errorf("scanning file: %w", err)
 	}
 
-	return FileInfo{Status: StatusParsed, Path: path, Contents: contents.String()}, nil
+	return prompt.FileInfo{Status: prompt.StatusParsed, Path: path, Contents: contents.String()}, nil
 }
 
 func (fp *FileProcessor) fileIsBinary(file afero.File) (bool, error) {

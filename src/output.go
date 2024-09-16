@@ -3,7 +3,7 @@ package src
 import (
 	"fmt"
 	"github.com/atotto/clipboard"
-	"strings"
+	"github.com/fargusplumdoodle/dump_dir/src/prompt"
 )
 
 func PrintUsage() {
@@ -44,7 +44,7 @@ func PrintError(errorType string, filePath string, err error) {
 	fmt.Printf(boldRed("❌ Error %s file %s: %v\n", errorType, filePath, err))
 }
 
-func CopyToClipboard(content string) bool {
+func copyToClipboard(content string) bool {
 	err := clipboard.WriteAll(content)
 	if err != nil {
 		fmt.Println(boldRed(fmt.Sprintf("❌ Error copying to clipboard: %v", err)))
@@ -53,27 +53,22 @@ func CopyToClipboard(content string) bool {
 	return true
 }
 
-func FormatFileContent(path, contents string) string {
-	return fmt.Sprintf("START FILE: %s\n%s\nEND FILE: %s\n\n", path, contents, path)
-}
-
-func GenerateDetailedOutput(stats Stats) string {
-	var detailedOutput strings.Builder
-
-	for _, fileInfo := range stats.ProcessedFiles {
-		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
-	}
-
-	return detailedOutput.String()
-}
-
 func PrintDetailedOutput(stats Stats) {
-	detailedOutput := GenerateDetailedOutput(stats)
-	summary := DisplayStats(stats)
-
-	if CopyToClipboard(detailedOutput) {
-		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
+	p := prompt.Prompt{
+		ProcessedFiles: stats.ParsedFiles,
+		SkippedLarge:   stats.SkippedLarge,
+		SkippedBinary:  stats.SkippedBinary,
 	}
 
-	fmt.Println(summary)
+	xmlPrompt := prompt.GenerateXMLPrompt(p)
+	xmlOutput, err := prompt.MarshalXMLPrompt(xmlPrompt)
+	if err != nil {
+		fmt.Println("❌ Error marshaling to XML:", err)
+		return
+	}
+	if copyToClipboard(xmlOutput) {
+		fmt.Println(BoldGreen("✅ XML output has been copied to clipboard.\n"))
+	} else {
+		fmt.Println("❌ Failed to copy XML output to clipboard.")
+	}
 }
