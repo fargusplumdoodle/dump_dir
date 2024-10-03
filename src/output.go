@@ -54,6 +54,7 @@ func copyToClipboard(content string) bool {
 }
 
 func PrintDetailedOutput(stats Stats) {
+	summary := DisplayStats(stats)
 	p := prompt.Prompt{
 		ProcessedFiles: stats.ParsedFiles,
 		SkippedLarge:   stats.SkippedLarge,
@@ -66,6 +67,8 @@ func PrintDetailedOutput(stats Stats) {
 		fmt.Println("❌ Error marshaling to XML:", err)
 		return
 	}
+
+	fmt.Println(summary)
 	if copyToClipboard(xmlOutput) {
 		fmt.Println(BoldGreen("✅ XML output has been copied to clipboard.\n"))
 	} else {
