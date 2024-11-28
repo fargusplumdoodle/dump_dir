@@ -11,12 +11,13 @@ func CalculateStats(processedFiles []FileInfo) Stats {
 	var skippedLarge, skippedBinary, parsedFiles []FileInfo
 
 	sortedFiles := SortFileList(processedFiles)
+	tokenEstimator := NewTokenEstimator()
 
 	for _, fileInfo := range sortedFiles {
 		switch fileInfo.Status {
 		case StatusParsed:
 			totalLines += strings.Count(fileInfo.Contents, "\n")
-			estimatedTokens += estimateTokens(fileInfo.Contents)
+			estimatedTokens += tokenEstimator.EstimateTokens(fileInfo.Contents)
 			parsedFiles = append(parsedFiles, fileInfo)
 		case StatusSkippedTooLarge:
 			skippedLarge = append(skippedLarge, fileInfo)
@@ -58,10 +59,6 @@ func printFileList(summary *strings.Builder, heading string, files []FileInfo) {
 	for _, file := range files {
 		summary.WriteString(fmt.Sprintf("- %s\n", file.Path))
 	}
-}
-
-func estimateTokens(content string) int {
-	return len(strings.Fields(content))
 }
 
 func formatTokenCount(tokens int) string {
