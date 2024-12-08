@@ -77,8 +77,8 @@ func ParseArgs(args []string) (Config, error) {
 				config.Extensions = append(config.Extensions, strings.Split(arg, ",")...)
 				extensionMode = false
 			} else {
-				if fileInfo, err := OsStat(arg); err == nil {
-					if fileInfo.IsDir() {
+				if isDir, err := isDirectory(arg); err == nil {
+					if isDir {
 						config.Directories = append(config.Directories, arg)
 					} else {
 						config.SpecificFiles = append(config.SpecificFiles, arg)
