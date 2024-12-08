@@ -29,10 +29,10 @@ func (cl *ConfigLoader) LoadAndMergeConfig(cmdConfig Config) (Config, error) {
 	if configFile == nil {
 		return cmdConfig, nil
 	}
-	return mergeConfigs(cmdConfig, *configFile), nil
+	return MergeConfigs(cmdConfig, *configFile), nil
 }
 
-func mergeConfigs(cmdConfig Config, fileConfig ConfigFile) Config {
+func MergeConfigs(cmdConfig Config, fileConfig ConfigFile) Config {
 	mergedConfig := cmdConfig
 
 	if fileConfig.Ignore != nil {

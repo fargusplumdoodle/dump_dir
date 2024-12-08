@@ -1,11 +1,7 @@
 package src
 
-import (
-	"os"
-)
-
 func isDirectory(path string) (bool, error) {
-	fileInfo, err := os.Stat(path)
+	fileInfo, err := OsStat(path)
 	if err != nil {
 		return false, err
 	}
