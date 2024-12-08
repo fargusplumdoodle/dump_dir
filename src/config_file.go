@@ -41,15 +41,8 @@ func MergeConfigs(cmdConfig Config, fileConfig ConfigFile) Config {
 
 	if fileConfig.Include != nil {
 		for _, includePath := range fileConfig.Include {
-			isDir, err := isDirectory(includePath)
-			if err != nil {
-				fmt.Printf("Warning: Could not stat path %s: %v\n", includePath, err)
-				continue
-			}
-			if isDir {
-				mergedConfig.Directories = append(mergedConfig.Directories, includePath)
-			} else {
-				mergedConfig.SpecificFiles = append(mergedConfig.SpecificFiles, includePath)
+			if err := mergedConfig.AddIncludePath(includePath); err != nil {
+				fmt.Printf("Warning: Could not process path %s: %v\n", includePath, err)
 			}
 		}
 	}

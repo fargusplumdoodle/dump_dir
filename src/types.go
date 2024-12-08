@@ -1,5 +1,7 @@
 package src
 
+import "fmt"
+
 type FileStatus string
 
 const (
@@ -22,6 +24,41 @@ type Config struct {
 	SpecificFiles  []string
 	IncludeIgnored bool
 	MaxFileSize    int64
+}
+
+func (c *Config) AddIncludePath(path string) error {
+	if path == "" {
+		return nil
+	}
+
+	normalizedPath := NormalizePath(path)
+
+	// Check if path already exists in either list
+	for _, existingPath := range c.SpecificFiles {
+		if existingPath == normalizedPath {
+			return nil
+		}
+	}
+	for _, existingPath := range c.Directories {
+		if existingPath == normalizedPath {
+			return nil
+		}
+	}
+
+	// Determine if it's a directory or file
+	isDir, err := isDirectory(normalizedPath)
+	if err != nil {
+		return fmt.Errorf("error checking path type for %s: %w", normalizedPath, err)
+	}
+
+	// Add to appropriate list
+	if isDir {
+		c.Directories = append(c.Directories, normalizedPath)
+	} else {
+		c.SpecificFiles = append(c.SpecificFiles, normalizedPath)
+	}
+
+	return nil
 }
 
 type Stats struct {

@@ -34,7 +34,7 @@ func (fp *FileProcessor) ProcessFiles(files []string) []FileInfo {
 		go func(chunk []string) {
 			defer wg.Done()
 			for _, file := range chunk {
-				fileInfo, err := fp.processFile(file)
+				fileInfo, err := fp.processFile(NormalizePath(file))
 				if err != nil {
 					PrintError("processing", file, err)
 					continue
