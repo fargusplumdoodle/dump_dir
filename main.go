@@ -39,8 +39,15 @@ func main() {
 	}
 }
 
-func performDumpDir(config Config) {
+func performDumpDir(cliArgumentsConfig Config) {
 	fs := afero.NewOsFs()
+	configLoader := NewConfigLoader(fs)
+	config, err := configLoader.LoadAndMergeConfig(cliArgumentsConfig)
+	if err != nil {
+		fmt.Printf("Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
 	fileFinder := NewFileFinder(config, fs)
 	fileProcessor := NewFileProcessor(fs, config)
 

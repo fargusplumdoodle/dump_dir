@@ -1,0 +1,4 @@
+---
+include:
+  - src/file_finder.go
+  - tests/
