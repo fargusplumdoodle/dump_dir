@@ -79,6 +79,34 @@ If any files are skipped for any reason, `dump_dir` will inform you.
 | File too large  | `<FILE TOO LARGE: %d bytes>`    |
 | Empty files     | `<EMPTY FILE>`                  |
 
+## 📝 Configuration File
+
+`dump_dir` will check for a file in your current directory
+called `.dump_dir.yml` which can be used to specify default options. 
+
+Example `.dump_dir.yml` file:
+```yaml
+---
+# Always include these paths
+include:
+  - ./README.md
+  - ./prompts
+
+# Always skip these directories
+# (even if they aren't in your gitignore)
+ignore:
+  - ./dist 
+  - ./vendor
+```
+
+You can check the config file of this repo as another example.
+
+**Purpose**
+
+Including things like coding standards, general architecture patterns,
+and high level explanations of your work can produce dramatically
+better results with LLMs.
+
 
 ## 🛠️ Installation
 
@@ -104,6 +132,7 @@ For Windows users, please download the latest release from the GitHub Releases p
 ## 💡 Tips for LLM Development
 
 - 📁 Use `dump_dir` to quickly gather context from multiple project files
+- 📚 Include documentation in your prompts
 - 🧠 Paste the copied content directly into your LLM conversation
 - 🔄 Easily update context by re-running `dump_dir` with different parameters
 
