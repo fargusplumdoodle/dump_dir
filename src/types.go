@@ -1,6 +1,9 @@
 package src
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/spf13/afero"
+)
 
 type FileStatus string
 
@@ -24,6 +27,14 @@ type Config struct {
 	SpecificFiles  []string
 	IncludeIgnored bool
 	MaxFileSize    int64
+}
+
+type RunConfig struct {
+	Fs        afero.Fs
+	Clipboard ClipboardManager
+	Version   string
+	Commit    string
+	Date      string
 }
 
 func (c *Config) AddIncludePath(path string) error {

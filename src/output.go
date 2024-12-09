@@ -2,7 +2,6 @@ package src
 
 import (
 	"fmt"
-	"github.com/atotto/clipboard"
 	"strings"
 )
 
@@ -44,7 +43,7 @@ func PrintError(errorType string, filePath string, err error) {
 	fmt.Printf(boldRed("❌ Error %s file %s: %v\n", errorType, filePath, err))
 }
 
-func CopyToClipboard(content string) bool {
+func CopyToClipboard(clipboard ClipboardManager, content string) bool {
 	err := clipboard.WriteAll(content)
 	if err != nil {
 		fmt.Println(boldRed(fmt.Sprintf("❌ Error copying to clipboard: %v", err)))
@@ -67,11 +66,11 @@ func GenerateDetailedOutput(stats Stats) string {
 	return detailedOutput.String()
 }
 
-func PrintDetailedOutput(stats Stats) {
+func PrintDetailedOutput(stats Stats, config RunConfig) {
 	detailedOutput := GenerateDetailedOutput(stats)
 	summary := DisplayStats(stats)
 
-	if CopyToClipboard(detailedOutput) {
+	if CopyToClipboard(config.Clipboard, detailedOutput) {
 		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
 	}
 

@@ -14,51 +14,18 @@ var (
 )
 
 func main() {
-	args := os.Args[1:]
-
-	if !ValidateArgs(args) {
-		PrintUsage()
-		return
-	}
-	config, err := ParseArgs(args)
-	if err != nil {
-		fmt.Printf("Error parsing arguments: %v\n", err)
-		PrintUsage()
-		os.Exit(1)
-	}
-
-	switch config.Action {
-	case "help":
-		PrintUsage()
-		return
-	case "version":
-		PrintVersion()
-		return
-	case "dump_dir":
-		performDumpDir(config)
-	}
-}
-
-func performDumpDir(cliArgumentsConfig Config) {
 	fs := afero.NewOsFs()
-	configLoader := NewConfigLoader(fs)
-	config, err := configLoader.LoadAndMergeConfig(cliArgumentsConfig)
-	if err != nil {
-		fmt.Printf("Error loading config: %v\n", err)
-		os.Exit(1)
+	clipboard := NewSystemClipboard()
+	runCfg := RunConfig{
+		Version:   version,
+		Commit:    commit,
+		Date:      date,
+		Fs:        fs,
+		Clipboard: clipboard,
 	}
 
-	fileFinder := NewFileFinder(config, fs)
-	fileProcessor := NewFileProcessor(fs, config)
-
-	filePaths := fileFinder.DiscoverFiles()
-	processedFiles := fileProcessor.ProcessFiles(filePaths)
-	stats := CalculateStats(processedFiles)
-	PrintDetailedOutput(stats)
-}
-
-func PrintVersion() {
-	println("dump_dir version:", version)
-	println("commit:", commit)
-	println("built at:", date)
+	if err := Run(os.Args[1:], runCfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
