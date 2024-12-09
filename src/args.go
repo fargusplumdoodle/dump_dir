@@ -71,21 +71,14 @@ func ParseArgs(args []string) (Config, error) {
 			}
 		default:
 			if skipMode {
-				config.SkipDirs = append(config.SkipDirs, arg)
+				config.AddSkipDir(arg)
 				skipMode = false
 			} else if extensionMode {
 				config.Extensions = append(config.Extensions, strings.Split(arg, ",")...)
 				extensionMode = false
 			} else {
-				if fileInfo, err := OsStat(arg); err == nil {
-					if fileInfo.IsDir() {
-						config.Directories = append(config.Directories, arg)
-					} else {
-						config.SpecificFiles = append(config.SpecificFiles, arg)
-					}
-				} else {
-					// If we can't stat it, assume it's a directory
-					config.Directories = append(config.Directories, arg)
+				if err := config.AddIncludePath(arg); err != nil {
+					fmt.Printf("Warning: Could not process path %s: %v\n", arg, err)
 				}
 			}
 		}

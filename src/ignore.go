@@ -2,7 +2,7 @@ package src
 
 import (
 	"bufio"
-	"os"
+	"github.com/spf13/afero"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -13,14 +13,19 @@ import (
 var ExecCommand = exec.Command
 
 type IgnoreManager struct {
+	fs afero.Fs
+
 	ignorePatterns []glob.Glob
 	ignoreDirs     []string
+	skipPaths      []string
 	includeIgnored bool
 }
 
-func NewIgnoreManager(includeIgnored bool) (*IgnoreManager, error) {
+func NewIgnoreManager(fs afero.Fs, includeIgnored bool, skipPaths []string) (*IgnoreManager, error) {
 	im := &IgnoreManager{
+		fs:             fs,
 		includeIgnored: includeIgnored,
+		skipPaths:      skipPaths,
 	}
 	err := im.loadIgnorePatterns()
 	if err != nil {
@@ -55,7 +60,7 @@ func getGlobalGitignorePath() (string, error) {
 }
 
 func (im *IgnoreManager) loadIgnoreFile(path string) {
-	file, err := os.Open(path)
+	file, err := im.fs.Open(path)
 	if err != nil {
 		return // Ignore errors, as the file might not exist
 	}
@@ -75,6 +80,7 @@ func (im *IgnoreManager) loadIgnoreFile(path string) {
 				}
 			}
 		}
+
 	}
 }
 
@@ -94,9 +100,14 @@ func (im *IgnoreManager) ShouldIgnore(path string) bool {
 		dir = filepath.Dir(dir)
 	}
 
-	// Check file patterns
 	for _, pattern := range im.ignorePatterns {
 		if pattern.Match(path) {
+			return true
+		}
+	}
+
+	for _, skipPath := range im.skipPaths {
+		if skipPath == path {
 			return true
 		}
 	}
