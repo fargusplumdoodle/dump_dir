@@ -1,4 +1,4 @@
-package tests
+package e2e
 
 type MockClipboard struct {
 	Content string

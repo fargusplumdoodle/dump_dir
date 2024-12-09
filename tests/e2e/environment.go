@@ -1,4 +1,4 @@
-package tests
+package e2e
 
 import (
 	"bytes"
@@ -11,9 +11,9 @@ import (
 	"testing"
 )
 
-// TestEnvironment encapsulates all the mocked dependencies and utilities
+// Environment encapsulates all the mocked dependencies and utilities
 // needed for end-to-end testing
-type TestEnvironment struct {
+type Environment struct {
 	t          *testing.T
 	fs         afero.Fs
 	stdout     *bytes.Buffer
@@ -24,8 +24,8 @@ type TestEnvironment struct {
 	args       []string
 }
 
-// NewTestEnvironment creates a new test environment with mocked dependencies
-func NewTestEnvironment(t *testing.T) *TestEnvironment {
+// NewEnvironment creates a new test environment with mocked dependencies
+func NewEnvironment(t *testing.T) *Environment {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	fs := afero.NewMemMapFs()
@@ -35,7 +35,7 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 		return fs.Stat(name)
 	}
 
-	return &TestEnvironment{
+	return &Environment{
 		t:         t,
 		fs:        fs,
 		stdout:    stdout,
@@ -45,13 +45,13 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 }
 
 // WithArgs sets the command line arguments for the test
-func (e *TestEnvironment) WithArgs(args string) *TestEnvironment {
+func (e *Environment) WithArgs(args string) *Environment {
 	e.args = strings.Fields(args)
 	return e
 }
 
 // WithFiles creates files in the virtual filesystem
-func (e *TestEnvironment) WithFiles(files map[string]string) *TestEnvironment {
+func (e *Environment) WithFiles(files map[string]string) *Environment {
 	for path, content := range files {
 		// Clean the path to ensure consistent formatting
 		cleanPath := filepath.Clean(path)
@@ -75,7 +75,7 @@ func (e *TestEnvironment) WithFiles(files map[string]string) *TestEnvironment {
 }
 
 // WithWorkingDir sets up a working directory for the test
-func (e *TestEnvironment) WithWorkingDir(path string) *TestEnvironment {
+func (e *Environment) WithWorkingDir(path string) *Environment {
 	cleanPath := filepath.Clean(path)
 	err := e.fs.MkdirAll(cleanPath, 0755)
 	if err != nil {
@@ -86,12 +86,12 @@ func (e *TestEnvironment) WithWorkingDir(path string) *TestEnvironment {
 }
 
 // Run executes the dump_dir command in the test environment
-func (e *TestEnvironment) Run() *TestResult {
+func (e *Environment) Run() *Result {
 	// Save original stdout/stderr
 	originalStdout := os.Stdout
 	originalStderr := os.Stderr
 
-	// Create pipe for capturing output
+	// Create pipe for capturing Output
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 	os.Stderr = w
@@ -110,54 +110,14 @@ func (e *TestEnvironment) Run() *TestResult {
 	os.Stdout = originalStdout
 	os.Stderr = originalStderr
 
-	// Capture output
+	// Capture Output
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
 
-	return &TestResult{
+	return &Result{
 		env:       e,
-		output:    buf.String(),
-		clipboard: e.clipboard.Content,
-		err:       err,
+		Output:    buf.String(),
+		Clipboard: e.clipboard.Content,
+		Err:       err,
 	}
-}
-
-// TestResult contains the results of running the command
-type TestResult struct {
-	env       *TestEnvironment
-	output    string
-	clipboard string
-	err       error
-}
-
-// AssertOutputContains checks if the command output contains expected content
-func (r *TestResult) AssertOutputContains(expected string) *TestResult {
-	if !strings.Contains(r.output, expected) {
-		r.env.t.Errorf("Expected output to contain %q, got: %q", expected, r.output)
-	}
-	return r
-}
-
-// AssertClipboardContains checks if the clipboard contains expected content
-func (r *TestResult) AssertClipboardContains(expected string) *TestResult {
-	if !strings.Contains(r.clipboard, expected) {
-		r.env.t.Errorf("Expected clipboard to contain %q, got: %q", expected, r.clipboard)
-	}
-	return r
-}
-
-// AssertNoError checks if the command completed without error
-func (r *TestResult) AssertNoError() *TestResult {
-	if r.err != nil {
-		r.env.t.Errorf("Expected no error, got: %v", r.err)
-	}
-	return r
-}
-
-// AssertError checks if the command completed with an error
-func (r *TestResult) AssertError() *TestResult {
-	if r.err == nil {
-		r.env.t.Error("Expected an error, got none")
-	}
-	return r
 }

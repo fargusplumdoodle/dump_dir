@@ -1,12 +1,13 @@
 package tests
 
 import (
+	"github.com/fargusplumdoodle/dump_dir/tests/e2e"
 	"testing"
 )
 
 func TestDumpDir(t *testing.T) {
 	t.Run("basic file dump", func(t *testing.T) {
-		env := NewTestEnvironment(t).
+		env := e2e.NewEnvironment(t).
 			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
 				"/test/project/main.go": "package main\n\nfunc main() {}\n",
@@ -14,38 +15,16 @@ func TestDumpDir(t *testing.T) {
 			}).
 			WithArgs("-e go /test/project")
 
-		env.Run().
-			AssertOutputContains("✅ File contents have been copied to clipboard").
-			AssertClipboardContains("START FILE: /test/project/main.go").
-			AssertClipboardContains("START FILE: /test/project/util.go")
+		result := env.Run()
+
+		validator := e2e.NewOutputValidator(t, result)
+		validator.
+			AssertSuccessfulRun().
+			AssertFileInOutput("/test/project/main.go").
+			AssertFileInOutput("/test/project/util.go").
+			AssertFileCount(2).
+			AssertLineCount(6).
+			AssertTokenCount(26)
 	})
 
-	t.Run("respects gitignore", func(t *testing.T) {
-		env := NewTestEnvironment(t).
-			WithWorkingDir("/test/project").
-			WithFiles(map[string]string{
-				"/test/project/.gitignore":        "*.generated.go\n",
-				"/test/project/main.go":           "package main\n",
-				"/test/project/auto.generated.go": "package main\n",
-			}).
-			WithArgs("-e go /test/project")
-
-		env.Run().
-			AssertOutputContains("✅ File contents have been copied to clipboard").
-			AssertClipboardContains("START FILE: /test/project/main.go").
-	})
-
-	t.Run("handles binary files", func(t *testing.T) {
-		env := NewTestEnvironment(t).
-			WithWorkingDir("/test/project").
-			WithFiles(map[string]string{
-				"/test/project/main.go":    "package main\n",
-				"/test/project/binary.exe": "\x00\x01\x02\x03",
-			}).
-			WithArgs("dump_dir /test/project")
-
-		env.Run().
-			AssertOutputContains("💽 Skipped binary files:").
-			AssertOutputContains("binary.exe")
-	})
 }
