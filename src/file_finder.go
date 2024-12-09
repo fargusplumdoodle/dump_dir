@@ -15,13 +15,11 @@ type FileFinder struct {
 }
 
 func NewFileFinder(config Config, fs afero.Fs) *FileFinder {
-	ff := &FileFinder{Config: config, Fs: fs}
-	im, err := NewIgnoreManager(config.IncludeIgnored)
+	im, err := NewIgnoreManager(config.IncludeIgnored, config.SkipDirs)
 	if err != nil {
 		fmt.Printf(boldRed("❌ Error initializing IgnoreManager: %v\n"), err)
 	}
-	ff.IgnoreManager = im
-	return ff
+	return &FileFinder{Config: config, Fs: fs, IgnoreManager: im}
 }
 
 func (ff *FileFinder) DiscoverFiles() []string {
@@ -101,15 +99,6 @@ func (ff *FileFinder) processFile(dir string, file os.FileInfo, matchingFiles *[
 func (ff *FileFinder) shouldProcessFile(filePath string) bool {
 	return !ff.IgnoreManager.ShouldIgnore(filePath) &&
 		ff.matchesExtensions(filepath.Base(filePath))
-}
-
-func (ff *FileFinder) isInSkipDirs(filePath string) bool {
-	for _, skipDir := range ff.Config.SkipDirs {
-		if ff.isSubdirectory(filePath, skipDir) {
-			return true
-		}
-	}
-	return false
 }
 
 func (ff *FileFinder) matchesExtensions(filename string) bool {

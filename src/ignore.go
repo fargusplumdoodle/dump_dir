@@ -15,12 +15,14 @@ var ExecCommand = exec.Command
 type IgnoreManager struct {
 	ignorePatterns []glob.Glob
 	ignoreDirs     []string
+	skipPaths      []string
 	includeIgnored bool
 }
 
-func NewIgnoreManager(includeIgnored bool) (*IgnoreManager, error) {
+func NewIgnoreManager(includeIgnored bool, skipPaths []string) (*IgnoreManager, error) {
 	im := &IgnoreManager{
 		includeIgnored: includeIgnored,
+		skipPaths:      skipPaths,
 	}
 	err := im.loadIgnorePatterns()
 	if err != nil {
@@ -97,6 +99,12 @@ func (im *IgnoreManager) ShouldIgnore(path string) bool {
 	// Check file patterns
 	for _, pattern := range im.ignorePatterns {
 		if pattern.Match(path) {
+			return true
+		}
+	}
+
+	for _, skipPath := range im.skipPaths {
+		if skipPath == path {
 			return true
 		}
 	}
