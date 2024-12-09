@@ -153,22 +153,6 @@ Happy coding! 🎉👨‍💻👩‍💻
 ##################
 ##################
 
-
-Output Format Tests:
-
-Test file content markers (START FILE/END FILE)
-Test correct line counting
-Test token estimation accuracy
-Test handling of different line endings (CRLF/LF)
-Test output formatting of skipped files
-
-
-CLIPBOARD OUTPUT TESTS:
-- Binary files
-- Too large files
-- Empty files
-- Normal files
-
 Path Handling Tests:
 
 Test with absolute paths

@@ -207,3 +207,66 @@ func (v *Validator) AssertEmptyFile(filePath string) *Validator {
 
 	return v
 }
+
+func (v *Validator) AssertWholeFileContent(filePath, expectedContent string) *Validator {
+	startMarker := fmt.Sprintf("START FILE: %s\n", filePath)
+	endMarker := fmt.Sprintf("\nEND FILE: %s\n", filePath)
+
+	expectedBlock := startMarker + expectedContent + endMarker
+
+	if !strings.Contains(v.clipboard, expectedBlock) {
+		v.t.Errorf("Expected clipboard to contain exact content for file %q:\nExpected:\n%s\nGot clipboard content:\n%s",
+			filePath, expectedBlock, v.clipboard)
+	}
+
+	return v
+}
+
+// AssertBinaryFile checks if a file is properly marked as binary in the clipboard
+func (v *Validator) AssertBinaryFile(filePath string) *Validator {
+	startMarker := fmt.Sprintf("START FILE: %s", filePath)
+	binaryMarker := "<BINARY SKIPPED>"
+	endMarker := fmt.Sprintf("END FILE: %s", filePath)
+
+	// Check for start marker
+	if !strings.Contains(v.clipboard, startMarker) {
+		v.t.Errorf("Expected clipboard to contain start marker for binary file %q", filePath)
+	}
+
+	// Check for binary marker
+	if !strings.Contains(v.clipboard, binaryMarker) {
+		v.t.Errorf("Expected clipboard to contain binary marker for file %q", filePath)
+	}
+
+	// Check for end marker
+	if !strings.Contains(v.clipboard, endMarker) {
+		v.t.Errorf("Expected clipboard to contain end marker for file %q", filePath)
+	}
+
+	// Check markers appear in correct order
+	clipboardContent := v.clipboard
+	startIndex := strings.Index(clipboardContent, startMarker)
+	binaryIndex := strings.Index(clipboardContent, binaryMarker)
+	endIndex := strings.Index(clipboardContent, endMarker)
+
+	if !(startIndex < binaryIndex && binaryIndex < endIndex) {
+		v.t.Errorf("File markers and binary marker are not in correct order for file %q", filePath)
+	}
+
+	return v
+}
+
+// AssertFileNotInOutput verifies that a file is not present in the output
+func (v *Validator) AssertFileNotInOutput(filePath string) *Validator {
+	startMarker := fmt.Sprintf("START FILE: %s", filePath)
+
+	if strings.Contains(v.clipboard, startMarker) {
+		v.t.Errorf("Expected file %q to not be present in clipboard content", filePath)
+	}
+
+	if strings.Contains(v.output, filePath) {
+		v.t.Errorf("Expected file %q to not be present in console output", filePath)
+	}
+
+	return v
+}
