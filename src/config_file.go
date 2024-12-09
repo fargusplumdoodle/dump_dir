@@ -36,7 +36,9 @@ func MergeConfigs(cmdConfig Config, fileConfig ConfigFile) Config {
 	mergedConfig := cmdConfig
 
 	if fileConfig.Ignore != nil {
-		mergedConfig.SkipDirs = append(mergedConfig.SkipDirs, fileConfig.Ignore...)
+		for _, ignorePath := range fileConfig.Ignore {
+			mergedConfig.AddSkipDir(ignorePath)
+		}
 	}
 
 	if fileConfig.Include != nil {

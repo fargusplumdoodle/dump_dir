@@ -29,20 +29,35 @@ type Config struct {
 	MaxFileSize    int64
 }
 
-type RunConfig struct {
-	Fs        afero.Fs
-	Clipboard ClipboardManager
-	Version   string
-	Commit    string
-	Date      string
+func (c *Config) AddSkipDir(path string) {
+	if path == "" {
+		return
+	}
+
+	normalizedPath := NormalizePath(path)
+
+	for _, existingPath := range c.SkipDirs {
+		if existingPath == normalizedPath {
+			return
+		}
+	}
+
+	c.SkipDirs = append(c.SkipDirs, normalizedPath)
+	return
 }
 
 func (c *Config) AddIncludePath(path string) error {
 	if path == "" {
 		return nil
 	}
-
 	normalizedPath := NormalizePath(path)
+
+	// Check if path is in skip directories
+	for _, skipDir := range c.SkipDirs {
+		if normalizedPath == skipDir {
+			return fmt.Errorf("cannot include path that is in skip directories: %s", normalizedPath)
+		}
+	}
 
 	// Check if path already exists in either list
 	for _, existingPath := range c.SpecificFiles {
@@ -70,6 +85,14 @@ func (c *Config) AddIncludePath(path string) error {
 	}
 
 	return nil
+}
+
+type RunConfig struct {
+	Fs        afero.Fs
+	Clipboard ClipboardManager
+	Version   string
+	Commit    string
+	Date      string
 }
 
 type Stats struct {

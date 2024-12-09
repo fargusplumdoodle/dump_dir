@@ -7,12 +7,12 @@
 
 # These files/directories will automatically
 # be included
+#l
 include:
   - ./README.md
   - ./prompts
 
 
-# I don't really have a reason to ignore
-# anything in this repo.
-# ignore:
-#  - ./just/promptsretend/there/is/something/here
+ignore:
+ - .gitignore
+ - .dump_dir.yml

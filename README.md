@@ -154,26 +154,6 @@ Happy coding! 🎉👨‍💻👩‍💻
 ##################
 
 
-Gitignore Integration Tests:
-
-Test respecting basic .gitignore patterns
-Test with --include-ignored flag
-Test with nested .gitignore files
-Test with global gitignore rules
-Test with complex gitignore patterns
-
-
-Special File Handling Tests:
-
-Test handling of binary files
-Test handling of symbolic links
-Test handling of files with special characters in names
-Test handling of hidden files
-Test handling of files with no extension
-
-
-Configuration File Tests:
-
 Test with valid .dump_dir.yml configuration
 Test with invalid YAML syntax in config
 Test config file directory inclusion rules

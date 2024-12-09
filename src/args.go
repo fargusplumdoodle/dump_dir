@@ -71,7 +71,7 @@ func ParseArgs(args []string) (Config, error) {
 			}
 		default:
 			if skipMode {
-				config.SkipDirs = append(config.SkipDirs, NormalizePath(arg))
+				config.AddSkipDir(arg)
 				skipMode = false
 			} else if extensionMode {
 				config.Extensions = append(config.Extensions, strings.Split(arg, ",")...)
