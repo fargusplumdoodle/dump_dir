@@ -2,26 +2,27 @@ package src
 
 import (
 	"fmt"
+	"github.com/fargusplumdoodle/dump_dir/src/prompt"
 	"sort"
 	"strings"
 )
 
-func CalculateStats(processedFiles []FileInfo) Stats {
+func CalculateStats(processedFiles []prompt.FileInfo) Stats {
 	var totalLines, estimatedTokens int
-	var skippedLarge, skippedBinary, parsedFiles []FileInfo
+	var skippedLarge, skippedBinary, parsedFiles []prompt.FileInfo
 
 	sortedFiles := SortFileList(processedFiles)
 	tokenEstimator := NewTokenEstimator()
 
 	for _, fileInfo := range sortedFiles {
 		switch fileInfo.Status {
-		case StatusParsed:
+		case prompt.StatusParsed:
 			totalLines += strings.Count(fileInfo.Contents, "\n")
 			estimatedTokens += tokenEstimator.EstimateTokens(fileInfo.Contents)
 			parsedFiles = append(parsedFiles, fileInfo)
-		case StatusSkippedTooLarge:
+		case prompt.StatusSkippedTooLarge:
 			skippedLarge = append(skippedLarge, fileInfo)
-		case StatusSkippedBinary:
+		case prompt.StatusSkippedBinary:
 			skippedBinary = append(skippedBinary, fileInfo)
 		}
 	}
@@ -50,7 +51,7 @@ func DisplayStats(stats Stats) string {
 	return summary.String()
 }
 
-func printFileList(summary *strings.Builder, heading string, files []FileInfo) {
+func printFileList(summary *strings.Builder, heading string, files []prompt.FileInfo) {
 	if len(files) == 0 {
 		return
 	}
@@ -71,7 +72,7 @@ func formatTokenCount(tokens int) string {
 	}
 }
 
-func SortFileList(files []FileInfo) []FileInfo {
+func SortFileList(files []prompt.FileInfo) []prompt.FileInfo {
 	sort.Slice(files, func(i, j int) bool {
 		// Split the paths into components
 		pathI := strings.Split(files[i].Path, "/")
