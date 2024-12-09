@@ -8,35 +8,33 @@ import (
 func TestExtensionFiltering(t *testing.T) {
 	t.Run("multiple extensions", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":    "package main\n\nfunc main() {}\n",
-				"/test/project/script.py":  "def main():\n    pass\n",
-				"/test/project/index.js":   "console.log('hello');\n",
-				"/test/project/README.md":  "# Test Project\n",
-				"/test/project/styles.css": "body { margin: 0; }\n",
+				"./main.go":    "package main\n\nfunc main() {}\n",
+				"./script.py":  "def main():\n    pass\n",
+				"./index.js":   "console.log('hello');\n",
+				"./README.md":  "# Test Project\n",
+				"./styles.css": "body { margin: 0; }\n",
 			}).
-			WithArgs("-e go,py,js /test/project")
+			WithArgs("-e go,py,js .")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/script.py").
-			AssertFileInOutput("/test/project/index.js").
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./script.py").
+			AssertFileInOutput("./index.js").
 			AssertFileCount(3)
 	})
 
 	t.Run("nonexistent extension", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":  "package main\n\nfunc main() {}\n",
-				"/test/project/test.txt": "some text\n",
+				"./main.go":  "package main\n\nfunc main() {}\n",
+				"./test.txt": "some text\n",
 			}).
-			WithArgs("-e xyz /test/project")
+			WithArgs("-e xyz .")
 
 		result := env.Run()
 
@@ -48,42 +46,40 @@ func TestExtensionFiltering(t *testing.T) {
 
 	t.Run("mixed valid and invalid extensions", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":  "package main\n\nfunc main() {}\n",
-				"/test/project/test.txt": "some text\n",
-				"/test/project/util.py":  "def util():\n    pass\n",
+				"./main.go":  "package main\n\nfunc main() {}\n",
+				"./test.txt": "some text\n",
+				"./util.py":  "def util():\n    pass\n",
 			}).
-			WithArgs("-e go,xyz,py /test/project")
+			WithArgs("-e go,xyz,py .")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/util.py").
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./util.py").
 			AssertFileCount(2)
 	})
 
 	t.Run("no extension specified", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":  "package main\n\nfunc main() {}\n",
-				"/test/project/test.txt": "some text\n",
-				"/test/project/README":   "# Test Project\n",
+				"./main.go":  "package main\n\nfunc main() {}\n",
+				"./test.txt": "some text\n",
+				"./README":   "# Test Project\n",
 			}).
-			WithArgs("/test/project")
+			WithArgs(".")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/test.txt").
-			AssertFileInOutput("/test/project/README").
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./test.txt").
+			AssertFileInOutput("./README").
 			AssertFileCount(3)
 	})
 }

@@ -9,77 +9,73 @@ import (
 func TestSkipDirectory(t *testing.T) {
 	t.Run("skip single directory", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":          "package main\nfunc main() {}\n",
-				"/test/project/lib/helper.go":    "package lib\nfunc helper() {}\n",
-				"/test/project/build/output.txt": "build output\n",
-				"/test/project/src/feature.go":   "package src\nfunc feature() {}\n",
+				"./main.go":          "package main\nfunc main() {}\n",
+				"./lib/helper.go":    "package lib\nfunc helper() {}\n",
+				"./build/output.txt": "build output\n",
+				"./src/feature.go":   "package src\nfunc feature() {}\n",
 			}).
-			WithArgs("-e go --skip /test/project/lib /test/project")
+			WithArgs("-e go --skip ./lib .")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/src/feature.go").
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./src/feature.go").
 			AssertFileCount(2)
 	})
 
 	t.Run("skip multiple directories", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":          "package main\nfunc main() {}\n",
-				"/test/project/lib/helper.go":    "package lib\nfunc helper() {}\n",
-				"/test/project/build/output.txt": "build output\n",
-				"/test/project/src/feature.go":   "package src\nfunc feature() {}\n",
-				"/test/project/test/test.go":     "package test\nfunc test() {}\n",
+				"./main.go":          "package main\nfunc main() {}\n",
+				"./lib/helper.go":    "package lib\nfunc helper() {}\n",
+				"./build/output.txt": "build output\n",
+				"./src/feature.go":   "package src\nfunc feature() {}\n",
+				"./test/test.go":     "package test\nfunc test() {}\n",
 			}).
-			WithArgs("-e go --skip /test/project/lib -s /test/project/test /test/project")
+			WithArgs("-e go --skip ./lib -s ./test .")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/src/feature.go").
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./src/feature.go").
 			AssertFileCount(2)
 	})
 
 	t.Run("skip nested directories", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":                 "package main\nfunc main() {}\n",
-				"/test/project/lib/helper.go":           "package lib\nfunc helper() {}\n",
-				"/test/project/lib/internal/util.go":    "package internal\nfunc util() {}\n",
-				"/test/project/lib/external/wrapper.go": "package external\nfunc wrapper() {}\n",
+				"./main.go":                 "package main\nfunc main() {}\n",
+				"./lib/helper.go":           "package lib\nfunc helper() {}\n",
+				"./lib/internal/util.go":    "package internal\nfunc util() {}\n",
+				"./lib/external/wrapper.go": "package external\nfunc wrapper() {}\n",
 			}).
-			WithArgs("-e go --skip /test/project/lib /test/project")
+			WithArgs("-e go --skip ./lib .")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
+			AssertFileInOutput("./main.go").
 			AssertFileCount(1)
 	})
 
 	t.Run("skip files", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":                 "package main\nfunc main() {}\n",
-				"/test/project/lib/helper.go":           "package lib\nfunc helper() {}\n",
-				"/test/project/lib/internal/util.go":    "package internal\nfunc util() {}\n",
-				"/test/project/lib/external/wrapper.go": "package external\nfunc wrapper() {}\n",
+				"./main.go":                 "package main\nfunc main() {}\n",
+				"./lib/helper.go":           "package lib\nfunc helper() {}\n",
+				"./lib/internal/util.go":    "package internal\nfunc util() {}\n",
+				"./lib/external/wrapper.go": "package external\nfunc wrapper() {}\n",
 			}).
-			WithArgs("-s /test/project/lib/helper.go /test/project")
+			WithArgs("-s lib/helper.go .")
 
 		result := env.Run()
 
@@ -88,51 +84,68 @@ func TestSkipDirectory(t *testing.T) {
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/lib/internal/util.go").
-			AssertFileInOutput("/test/project/lib/external/wrapper.go").
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./lib/internal/util.go").
+			AssertFileInOutput("./lib/external/wrapper.go").
 			AssertFileCount(3)
 	})
 
-	t.Run("skip directory with special characters", func(t *testing.T) {
+	t.Run("Normalize skip file paths", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":            "package main\nfunc main() {}\n",
-				"/test/project/lib-v1.2/helper.go": "package lib\nfunc helper() {}\n",
-				"/test/project/lib@temp/util.go":   "package temp\nfunc util() {}\n",
-				"/test/project/src/feature.go":     "package src\nfunc feature() {}\n",
+				"./src/main.go":       "package main\nfunc main() {}\n",
+				"./src/lib/helper.go": "package lib\nfunc helper() {}\n",
+				"./src/lib/util.go":   "package internal\nfunc util() {}\n",
+				"./src/ay/ay.go":      "package internal\nfunc util() {}\n",
 			}).
-			WithArgs("-e go --skip /test/project/lib-v1.2 --skip /test/project/lib@temp /test/project")
+			WithArgs(". -s src/lib/helper.go -s ./src/lib/util.go --skip src/ay")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/src/feature.go").
+			AssertFileInOutput("./src/main.go").
+			AssertFileCount(1)
+	})
+
+	t.Run("skip directory with special characters", func(t *testing.T) {
+		env := e2e.NewEnvironment(t).
+			WithFiles(map[string]string{
+				"./main.go":            "package main\nfunc main() {}\n",
+				"./lib-v1.2/helper.go": "package lib\nfunc helper() {}\n",
+				"./lib@temp/util.go":   "package temp\nfunc util() {}\n",
+				"./src/feature.go":     "package src\nfunc feature() {}\n",
+			}).
+			WithArgs("-e go --skip ./lib-v1.2 --skip ./lib@temp .")
+
+		result := env.Run()
+
+		validator := e2e.NewOutputValidator(t, result)
+		validator.
+			AssertSuccessfulRun().
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./src/feature.go").
 			AssertFileCount(2)
 	})
 
 	t.Run("skip nonexistent directory", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
-			WithWorkingDir("/test/project").
 			WithFiles(map[string]string{
-				"/test/project/main.go":        "package main\nfunc main() {}\n",
-				"/test/project/lib/helper.go":  "package lib\nfunc helper() {}\n",
-				"/test/project/src/feature.go": "package src\nfunc feature() {}\n",
+				"./main.go":        "package main\nfunc main() {}\n",
+				"./lib/helper.go":  "package lib\nfunc helper() {}\n",
+				"./src/feature.go": "package src\nfunc feature() {}\n",
 			}).
-			WithArgs("-e go --skip /test/project/nonexistent /test/project")
+			WithArgs("-e go --skip ./nonexistent .")
 
 		result := env.Run()
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
-			AssertFileInOutput("/test/project/main.go").
-			AssertFileInOutput("/test/project/lib/helper.go").
-			AssertFileInOutput("/test/project/src/feature.go").
+			AssertFileInOutput("./main.go").
+			AssertFileInOutput("./lib/helper.go").
+			AssertFileInOutput("./src/feature.go").
 			AssertFileCount(3)
 	})
 }

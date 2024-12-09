@@ -96,7 +96,6 @@ func (im *IgnoreManager) ShouldIgnore(path string) bool {
 		dir = filepath.Dir(dir)
 	}
 
-	// Check file patterns
 	for _, pattern := range im.ignorePatterns {
 		if pattern.Match(path) {
 			return true

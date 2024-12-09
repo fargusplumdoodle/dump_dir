@@ -74,17 +74,6 @@ func (e *Environment) WithFiles(files map[string]string) *Environment {
 	return e
 }
 
-// WithWorkingDir sets up a working directory for the test
-func (e *Environment) WithWorkingDir(path string) *Environment {
-	cleanPath := filepath.Clean(path)
-	err := e.fs.MkdirAll(cleanPath, 0755)
-	if err != nil {
-		e.t.Fatalf("Failed to create working directory %s: %v", cleanPath, err)
-	}
-	e.currentWd = cleanPath
-	return e
-}
-
 // Run executes the dump_dir command in the test environment
 func (e *Environment) Run() *Result {
 	// Save original stdout/stderr
