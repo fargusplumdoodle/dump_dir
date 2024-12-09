@@ -91,6 +91,7 @@ func (ff *FileFinder) findMatchingFiles(dirs []string) []string {
 
 func (ff *FileFinder) processFile(dir string, file os.FileInfo, matchingFiles *[]string) {
 	filePath := filepath.Join(dir, file.Name())
+	filePath = NormalizePath(filePath)
 	if ff.shouldProcessFile(filePath) {
 		*matchingFiles = append(*matchingFiles, filePath)
 	}
