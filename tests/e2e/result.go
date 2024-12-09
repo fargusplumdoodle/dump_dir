@@ -1,6 +1,9 @@
 package e2e
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // Result contains the results of running the command
 type Result struct {
@@ -40,4 +43,12 @@ func (r *Result) AssertError() *Result {
 		r.env.t.Error("Expected an error, got none")
 	}
 	return r
+}
+
+func (r *Result) PrintOutput() {
+	fmt.Println(r.Output)
+}
+
+func (r *Result) PrintClipboard() {
+	fmt.Println(r.Clipboard)
 }

@@ -55,7 +55,7 @@ func (c *Config) AddIncludePath(path string) error {
 	// Check if path is in skip directories
 	for _, skipDir := range c.SkipDirs {
 		if normalizedPath == skipDir {
-			return fmt.Errorf("cannot include path that is in skip directories: %s", normalizedPath)
+			return nil
 		}
 	}
 

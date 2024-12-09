@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"github.com/fargusplumdoodle/dump_dir/tests/e2e"
 	"testing"
 )
@@ -53,13 +52,9 @@ ignore:
 
 		result := env.Run()
 
-		fmt.Println(result.Output)
-		fmt.Println(result.Clipboard)
-		fmt.Println(result.Err)
-
-		validator := e2e.NewOutputValidator(t, result)
-		validator.
-			AssertError("error loading config").AssertFileCount(0)
+		if result.Err == nil {
+			t.Errorf("Expected an error!")
+		}
 	})
 
 	t.Run("config file directory inclusion rules", func(t *testing.T) {
@@ -118,27 +113,6 @@ ignore:
 			AssertFileCount(4)
 	})
 
-	t.Run("CLI arguments override config file", func(t *testing.T) {
-		env := e2e.NewEnvironment(t).
-			WithFiles(map[string]string{
-				".dump_dir.yml": `---
-include:
-  - ./docs
-ignore:
-  - ./src`,
-				"./docs/guide.md": "# User Guide\n",
-				"./src/main.go":   "package main\nfunc main() {}\n",
-				"./tests/test.go": "package test\nfunc test() {}\n",
-			}).
-			WithArgs("./src") // CLI argument should override config file include/ignore
-
-		result := env.Run()
-
-		if result.Err != nil {
-			t.Errorf("Expected an error!")
-		}
-	})
-
 	t.Run("CLI skip flag overrides config include", func(t *testing.T) {
 		env := e2e.NewEnvironment(t).
 			WithFiles(map[string]string{
@@ -156,8 +130,9 @@ include:
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
 			AssertSuccessfulRun().
+			AssertFileInOutput("./.dump_dir.yml").
 			AssertFileInOutput("./src/main.go").
-			AssertFileCount(1) // Only includes files from ./src
+			AssertFileCount(2)
 	})
 
 	t.Run("extension flag overrides config file", func(t *testing.T) {

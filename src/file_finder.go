@@ -53,6 +53,7 @@ func (ff *FileFinder) findMatchingFilesInDir(rootDir string) []string {
 	var matchingFiles []string
 
 	afero.Walk(ff.Fs, filepath.Clean(rootDir), func(path string, info os.FileInfo, err error) error {
+		path = NormalizePath(path)
 		if err != nil {
 			PrintError("accessing path", path, err)
 			return nil

@@ -154,13 +154,6 @@ Happy coding! 🎉👨‍💻👩‍💻
 ##################
 
 
-Test with valid .dump_dir.yml configuration
-Test with invalid YAML syntax in config
-Test config file directory inclusion rules
-Test config file directory exclusion rules
-Test precedence of CLI arguments over config file
-
-
 Output Format Tests:
 
 Test file content markers (START FILE/END FILE)

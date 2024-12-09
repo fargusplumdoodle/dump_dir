@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"github.com/fargusplumdoodle/dump_dir/tests/e2e"
 	"testing"
 )
@@ -78,8 +77,6 @@ func TestSkipDirectory(t *testing.T) {
 			WithArgs("-s lib/helper.go .")
 
 		result := env.Run()
-
-		fmt.Println(result.Output)
 
 		validator := e2e.NewOutputValidator(t, result)
 		validator.
