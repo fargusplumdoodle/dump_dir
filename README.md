@@ -148,3 +148,94 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---------------------------------------------
 
 Happy coding! 🎉👨‍💻👩‍💻
+
+##################
+##################
+##################
+Extension Filtering Tests:
+
+Test filtering multiple file extensions at once (e.g., go,js,py)
+Test with invalid/nonexistent extensions
+Test with case-insensitive extensions (e.g., GO vs go)
+Test with dot prefix in extension (e.g., .go vs go)
+
+
+Directory Skipping Tests:
+
+Test skipping a single directory
+Test skipping multiple directories
+Test skipping nested directories
+Test skipping directories with special characters
+Test skipping nonexistent directories
+
+
+File Size Tests:
+
+Test files at the default size limit (500KB)
+Test with custom max file size using different units (B, KB, MB)
+Test mixed files above and below size limit
+Test handling of empty files
+
+
+Gitignore Integration Tests:
+
+Test respecting basic .gitignore patterns
+Test with --include-ignored flag
+Test with nested .gitignore files
+Test with global gitignore rules
+Test with complex gitignore patterns
+
+
+Special File Handling Tests:
+
+Test handling of binary files
+Test handling of symbolic links
+Test handling of files with special characters in names
+Test handling of hidden files
+Test handling of files with no extension
+
+
+Configuration File Tests:
+
+Test with valid .dump_dir.yml configuration
+Test with invalid YAML syntax in config
+Test config file directory inclusion rules
+Test config file directory exclusion rules
+Test precedence of CLI arguments over config file
+
+
+Output Format Tests:
+
+Test file content markers (START FILE/END FILE)
+Test correct line counting
+Test token estimation accuracy
+Test handling of different line endings (CRLF/LF)
+Test output formatting of skipped files
+
+
+Path Handling Tests:
+
+Test with absolute paths
+Test with relative paths
+Test with multiple input directories
+Test with duplicate paths
+Test with nonexistent paths
+
+
+Error Handling Tests:
+
+Test with insufficient permissions
+Test with inaccessible directories
+Test with corrupted files
+Test with invalid command flags
+Test with conflicting arguments
+
+
+Performance Tests:
+
+Test with large number of small files
+Test with few large files
+Test with deep directory structures
+Test with mixed file sizes and types
+Test token counting performance
+
