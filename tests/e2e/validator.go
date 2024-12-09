@@ -139,3 +139,71 @@ func (v *Validator) AssertTokenCount(expectedCount int) *Validator {
 
 	return v
 }
+
+// AssertFileTooLarge checks if a file is properly marked as too large in the clipboard
+func (v *Validator) AssertFileTooLarge(filePath string, expectedSize int) *Validator {
+	startMarker := fmt.Sprintf("START FILE: %s", filePath)
+	sizeMarker := fmt.Sprintf("<FILE TOO LARGE: %d bytes>", expectedSize)
+	endMarker := fmt.Sprintf("END FILE: %s", filePath)
+
+	// Check for start marker
+	if !strings.Contains(v.clipboard, startMarker) {
+		v.t.Errorf("Expected clipboard to contain start marker for file %q", filePath)
+	}
+
+	// Check for size warning
+	if !strings.Contains(v.clipboard, sizeMarker) {
+		v.t.Errorf("Expected clipboard to contain size warning %q for file %q", sizeMarker, filePath)
+	}
+
+	// Check for end marker
+	if !strings.Contains(v.clipboard, endMarker) {
+		v.t.Errorf("Expected clipboard to contain end marker for file %q", filePath)
+	}
+
+	// Check markers appear in correct order
+	clipboardContent := v.clipboard
+	startIndex := strings.Index(clipboardContent, startMarker)
+	sizeIndex := strings.Index(clipboardContent, sizeMarker)
+	endIndex := strings.Index(clipboardContent, endMarker)
+
+	if !(startIndex < sizeIndex && sizeIndex < endIndex) {
+		v.t.Errorf("File markers and size warning are not in correct order for file %q", filePath)
+	}
+
+	return v
+}
+
+// AssertEmptyFile checks if a file is properly marked as empty in the clipboard
+func (v *Validator) AssertEmptyFile(filePath string) *Validator {
+	startMarker := fmt.Sprintf("START FILE: %s", filePath)
+	emptyMarker := "<EMPTY FILE>"
+	endMarker := fmt.Sprintf("END FILE: %s", filePath)
+
+	// Check for start marker
+	if !strings.Contains(v.clipboard, startMarker) {
+		v.t.Errorf("Expected clipboard to contain start marker for empty file %q", filePath)
+	}
+
+	// Check for empty file marker
+	if !strings.Contains(v.clipboard, emptyMarker) {
+		v.t.Errorf("Expected clipboard to contain empty file marker for file %q", filePath)
+	}
+
+	// Check for end marker
+	if !strings.Contains(v.clipboard, endMarker) {
+		v.t.Errorf("Expected clipboard to contain end marker for file %q", filePath)
+	}
+
+	// Check markers appear in correct order
+	clipboardContent := v.clipboard
+	startIndex := strings.Index(clipboardContent, startMarker)
+	emptyIndex := strings.Index(clipboardContent, emptyMarker)
+	endIndex := strings.Index(clipboardContent, endMarker)
+
+	if !(startIndex < emptyIndex && emptyIndex < endIndex) {
+		v.t.Errorf("File markers and empty marker are not in correct order for file %q", filePath)
+	}
+
+	return v
+}

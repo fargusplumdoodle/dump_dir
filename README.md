@@ -152,29 +152,6 @@ Happy coding! 🎉👨‍💻👩‍💻
 ##################
 ##################
 ##################
-Extension Filtering Tests:
-
-Test filtering multiple file extensions at once (e.g., go,js,py)
-Test with invalid/nonexistent extensions
-Test with case-insensitive extensions (e.g., GO vs go)
-Test with dot prefix in extension (e.g., .go vs go)
-
-
-Directory Skipping Tests:
-
-Test skipping a single directory
-Test skipping multiple directories
-Test skipping nested directories
-Test skipping directories with special characters
-Test skipping nonexistent directories
-
-
-File Size Tests:
-
-Test files at the default size limit (500KB)
-Test with custom max file size using different units (B, KB, MB)
-Test mixed files above and below size limit
-Test handling of empty files
 
 
 Gitignore Integration Tests:
@@ -212,6 +189,12 @@ Test token estimation accuracy
 Test handling of different line endings (CRLF/LF)
 Test output formatting of skipped files
 
+
+CLIPBOARD OUTPUT TESTS:
+- Binary files
+- Too large files
+- Empty files
+- Normal files
 
 Path Handling Tests:
 
