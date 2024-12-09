@@ -15,7 +15,7 @@ type FileFinder struct {
 }
 
 func NewFileFinder(config Config, fs afero.Fs) *FileFinder {
-	im, err := NewIgnoreManager(config.IncludeIgnored, config.SkipDirs)
+	im, err := NewIgnoreManager(fs, config.IncludeIgnored, config.SkipDirs)
 	if err != nil {
 		fmt.Printf(boldRed("❌ Error initializing IgnoreManager: %v\n"), err)
 	}
