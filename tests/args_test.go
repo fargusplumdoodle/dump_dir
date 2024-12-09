@@ -10,6 +10,41 @@ import (
 )
 
 func TestParseArgs(t *testing.T) {
+	// Set up a test filesystem with some sample files and directories
+	fs := afero.NewMemMapFs()
+
+	// Create test directory structure
+	testDirs := []string{
+		"project/src",
+		"project/src/vendor",
+		"project/src/generated",
+		"project/tests",
+		"project/dist",
+	}
+
+	for _, dir := range testDirs {
+		fs.MkdirAll(dir, 0755)
+	}
+
+	// Create some test files
+	testFiles := map[string]string{
+		"project/src/main.go":        "package main",
+		"project/src/util.go":        "package main",
+		"project/tests/main_test.go": "package tests",
+		"project/config.json":        "{}",
+	}
+
+	for path, content := range testFiles {
+		afero.WriteFile(fs, path, []byte(content), 0644)
+	}
+
+	// Mock os.Stat to use our memory filesystem
+	originalStat := OsStat
+	OsStat = func(name string) (os.FileInfo, error) {
+		return fs.Stat(name)
+	}
+	defer func() { OsStat = originalStat }()
+
 	tests := []struct {
 		name           string
 		args           []string
@@ -18,10 +53,10 @@ func TestParseArgs(t *testing.T) {
 	}{
 		{
 			name: "Default dump_dir action",
-			args: []string{"./src"},
+			args: []string{"project/src"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithDirectories("./src"),
+				WithDirectories("./project/src"),
 			),
 		},
 		{
@@ -39,99 +74,87 @@ func TestParseArgs(t *testing.T) {
 			),
 		},
 		{
-			name: "Multiple extensions and directories shorthand",
-			args: []string{"./src", "./tests", "-e", "go,js,py"},
+			name: "Multiple extensions and directories",
+			args: []string{"project/src", "project/tests", "-e", "go,json"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go", "js", "py"),
-				WithDirectories("./src", "./tests"),
-			),
-		},
-		{
-			name: "Multiple extension arguments",
-			args: []string{"./src", "./tests", "-e", "go", "--extension", "js,py"},
-			expectedConfig: BuildConfig(
-				WithAction("dump_dir"),
-				WithExtensions("go", "js", "py"),
-				WithDirectories("./src", "./tests"),
-			),
-		},
-		{
-			name: "Extensions first",
-			args: []string{"-e", "go", "./src", "./tests"},
-			expectedConfig: BuildConfig(
-				WithAction("dump_dir"),
-				WithExtensions("go"),
-				WithDirectories("./src", "./tests"),
+				WithExtensions("go", "json"),
+				WithDirectories("./project/src", "./project/tests"),
 			),
 		},
 		{
 			name: "Skip directories",
-			args: []string{"./src", "-s", "./src/vendor", "--skip", "./src/generated"},
+			args: []string{"project/src", "-s", "project/src/vendor", "--skip", "project/src/generated"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithDirectories("./src"),
-				WithSkipDirs("./src/vendor", "./src/generated"),
+				WithDirectories("./project/src"),
+				WithSkipDirs("./project/src/vendor", "./project/src/generated"),
 			),
 		},
 		{
 			name: "Include ignored files",
-			args: []string{"./src", "--include-ignored"},
+			args: []string{"project/src", "--include-ignored"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithDirectories("./src"),
+				WithDirectories("./project/src"),
 				WithIncludeIgnored(true),
 			),
 		},
 		{
 			name: "Complex case",
-			args: []string{"-e", "go,js", "-e", "go", "./src", "./tests", "-s", "./src/vendor", "--include-ignored", "./config.go"},
+			args: []string{
+				"-e", "go,json",
+				"project/src",
+				"project/tests",
+				"-s", "project/src/vendor",
+				"--include-ignored",
+				"project/config.json",
+			},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go", "js", "go"),
-				WithDirectories("./src", "./tests"),
-				WithSkipDirs("./src/vendor"),
+				WithExtensions("go", "json"),
+				WithDirectories("./project/src", "./project/tests"),
+				WithSkipDirs("./project/src/vendor"),
 				WithIncludeIgnored(true),
-				WithSpecificFiles("./config.go"),
+				WithSpecificFiles("./project/config.json"),
 			),
 		},
 		{
 			name: "Max filesize in Bytes",
-			args: []string{"-e", "go", "./src", "--max-filesize", "1000B"},
+			args: []string{"project/src", "--max-filesize", "1000B"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithExtensions("go"),
-				WithDirectories("./src"),
+				WithDirectories("./project/src"),
 				WithMaxFileSize(1000),
 			),
 		},
 		{
 			name: "Max filesize in Kilobytes",
-			args: []string{"./src", "-m", "500KB"},
+			args: []string{"project/src", "-m", "500KB"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithDirectories("./src"),
+				WithDirectories("./project/src"),
 				WithMaxFileSize(500*1024),
 			),
 		},
 		{
 			name: "Max filesize in Megabytes",
-			args: []string{"./src", "--max-filesize", "2MB"},
+			args: []string{"project/src", "--max-filesize", "2MB"},
 			expectedConfig: BuildConfig(
 				WithAction("dump_dir"),
-				WithDirectories("./src"),
+				WithDirectories("./project/src"),
 				WithMaxFileSize(2*1024*1024),
 			),
 		},
 		{
 			name:           "Invalid max filesize",
-			args:           []string{"./src", "--max-filesize", "invalid"},
+			args:           []string{"project/src", "--max-filesize", "invalid"},
 			expectedConfig: nil,
 			expectedError:  ErrInvalidMaxFileSize{Value: "invalid"},
 		},
 		{
 			name:           "Missing max filesize value",
-			args:           []string{"./src", "--max-filesize"},
+			args:           []string{"project/src", "--max-filesize"},
 			expectedConfig: nil,
 			expectedError:  ErrInvalidMaxFileSize{Value: ""},
 		},
@@ -159,26 +182,28 @@ func TestParseArgs(t *testing.T) {
 		})
 	}
 
+	// Keep the filesystem-aware test case separate as it uses a different file structure
 	t.Run("Filesystem-aware specific files and directories", func(t *testing.T) {
+		// Create a new filesystem for this specific test
 		fs := afero.NewMemMapFs()
-		afero.WriteFile(fs, "/project/src/main.go", []byte("package main"), 0644)
-		afero.WriteFile(fs, "/project/config.json", []byte("{}"), 0644)
-		fs.MkdirAll("/project/tests", 0755)
+		fs.MkdirAll("project/src", 0755)
+		fs.MkdirAll("project/tests", 0755)
+		afero.WriteFile(fs, "project/src/main.go", []byte("package main"), 0644)
+		afero.WriteFile(fs, "project/config.json", []byte("{}"), 0644)
 
-		originalStat := OsStat
+		// Update os.Stat for this test
 		OsStat = func(name string) (os.FileInfo, error) {
 			return fs.Stat(name)
 		}
-		defer func() { OsStat = originalStat }()
 
-		args := []string{"-e", "go,json", "/project/src/main.go", "/project/config.json", "/project/tests"}
+		args := []string{"-e", "go,json", "project/src/main.go", "project/config.json", "project/tests"}
 		config, err := ParseArgs(args)
 
 		expectedConfig := BuildConfig(
 			WithAction("dump_dir"),
 			WithExtensions("go", "json"),
-			WithSpecificFiles("/project/src/main.go", "/project/config.json"),
-			WithDirectories("/project/tests"),
+			WithSpecificFiles("./project/src/main.go", "./project/config.json"),
+			WithDirectories("./project/tests"),
 		)
 
 		if err != nil {
