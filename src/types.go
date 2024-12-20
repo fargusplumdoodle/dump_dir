@@ -22,6 +22,7 @@ type Config struct {
 	SpecificFiles  []string
 	IncludeIgnored bool
 	MaxFileSize    int64
+	GlobPatterns   []string
 }
 
 type Stats struct {

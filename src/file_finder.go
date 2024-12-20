@@ -99,8 +99,28 @@ func (ff *FileFinder) processFile(dir string, file os.FileInfo, matchingFiles *[
 }
 
 func (ff *FileFinder) shouldProcessFile(filePath string) bool {
-	return !ff.IgnoreManager.ShouldIgnore(filePath) &&
-		ff.matchesExtensions(filepath.Base(filePath))
+	if ff.IgnoreManager.ShouldIgnore(filePath) {
+		return false
+	}
+
+	// Check glob patterns first if they exist
+	if len(ff.Config.GlobPatterns) > 0 {
+		filename := filepath.Base(filePath)
+		for _, pattern := range ff.Config.GlobPatterns {
+			matched, err := filepath.Match(pattern, filename)
+			if err != nil {
+				fmt.Printf(boldRed("❌ Error matching glob pattern %s: %v\n"), pattern, err)
+				continue
+			}
+			if matched {
+				return true
+			}
+		}
+		return false
+	}
+
+	// If no glob patterns, fall back to extension matching
+	return ff.matchesExtensions(filepath.Base(filePath))
 }
 
 func (ff *FileFinder) isInSkipDirs(filePath string) bool {

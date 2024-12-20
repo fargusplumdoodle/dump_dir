@@ -30,6 +30,7 @@ func ParseArgs(args []string) (Config, error) {
 		Directories:   []string{},
 		Extensions:    []string{}, // Empty slice means all extensions
 		MaxFileSize:   500 * 1024, // Default to 500KB
+		GlobPatterns:  nil,        // Initialize as nil instead of empty slice
 	}
 
 	if len(args) == 0 {
@@ -44,6 +45,7 @@ func ParseArgs(args []string) (Config, error) {
 
 	skipMode := false
 	extensionMode := false
+	globMode := false
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -69,6 +71,8 @@ func ParseArgs(args []string) (Config, error) {
 			} else {
 				return config, ErrInvalidMaxFileSize{Value: ""}
 			}
+		case "-g", "--glob":
+			globMode = true
 		default:
 			if skipMode {
 				config.SkipDirs = append(config.SkipDirs, arg)
@@ -76,6 +80,9 @@ func ParseArgs(args []string) (Config, error) {
 			} else if extensionMode {
 				config.Extensions = append(config.Extensions, strings.Split(arg, ",")...)
 				extensionMode = false
+			} else if globMode {
+				config.GlobPatterns = append(config.GlobPatterns, arg)
+				globMode = false
 			} else {
 				if fileInfo, err := OsStat(arg); err == nil {
 					if fileInfo.IsDir() {
