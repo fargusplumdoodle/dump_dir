@@ -156,4 +156,34 @@ include:
 			AssertFileInOutput("./src/main.go").
 			AssertFileCount(1) // Only includes .go files
 	})
+
+	t.Run("ignore config file when --no-config is set", func(t *testing.T) {
+		env := e2e.NewEnvironment(t).
+			WithFiles(map[string]string{
+				".dump_dir.yml": `---
+ignore:
+  - ./vendor
+  - ./src
+  - ./README.md`,
+				"./src/main.go":   "package main\nfunc main() {}\n",
+				"./src/util.go":   "package main\nfunc util() {}\n",
+				"./vendor/lib.go": "package vendor\nfunc lib() {}\n",
+				"./README.md":     "# Test Project\n",
+				"./extra.txt":     "Extra file content",
+			}).
+			WithArgs(". --no-config") // Use the new flag
+
+		result := env.Run()
+
+		validator := e2e.NewOutputValidator(t, result)
+		validator.
+			AssertSuccessfulRun().
+			AssertFileInOutput("./.dump_dir.yml").
+			AssertFileInOutput("./src/main.go").
+			AssertFileInOutput("./src/util.go").
+			AssertFileInOutput("./vendor/lib.go").
+			AssertFileInOutput("./README.md").
+			AssertFileInOutput("./extra.txt").
+			AssertFileCount(6)
+	})
 }

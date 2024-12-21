@@ -24,13 +24,14 @@ func ValidateArgs(args []string) bool {
 
 func ParseArgs(args []string) (Config, error) {
 	config := Config{
-		Action:        "dump_dir", // Default action
+		Action:        "dump_dir",
 		SkipDirs:      []string{},
 		SpecificFiles: []string{},
 		Directories:   []string{},
-		Extensions:    []string{}, // Empty slice means all extensions
+		Extensions:    []string{},
 		MaxFileSize:   500 * 1024, // Default to 500KB
-		GlobPatterns:  nil,        // Initialize as nil instead of empty slice
+		GlobPatterns:  nil,
+		NoConfig:      false,
 	}
 
 	if len(args) == 0 {
@@ -60,6 +61,8 @@ func ParseArgs(args []string) (Config, error) {
 			skipMode = true
 		case "-e", "--extension":
 			extensionMode = true
+		case "--no-config", "-nc":
+			config.NoConfig = true
 		case "--max-filesize", "-m":
 			if i+1 < len(args) {
 				size, err := parseFileSize(args[i+1])

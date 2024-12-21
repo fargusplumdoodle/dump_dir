@@ -22,6 +22,9 @@ func NewConfigLoader(fs afero.Fs) *ConfigLoader {
 }
 
 func (cl *ConfigLoader) LoadAndMergeConfig(cmdConfig Config) (Config, error) {
+	if cmdConfig.NoConfig {
+		return cmdConfig, nil
+	}
 	configFile, err := cl.loadConfigFile()
 	if err != nil {
 		return cmdConfig, fmt.Errorf("error loading config file: %w", err)
