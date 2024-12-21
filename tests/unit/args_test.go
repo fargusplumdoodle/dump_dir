@@ -183,7 +183,7 @@ func TestParseArgs(t *testing.T) {
 				WithAction("dump_dir"),
 				WithDirectories("."),
 				WithGlobPatterns("*.go"),
-				WithSkipDirs("node_modules"),
+				WithSkipDirs("./node_modules"),
 			),
 		},
 		{

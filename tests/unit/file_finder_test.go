@@ -135,26 +135,25 @@ func TestFileFinder(t *testing.T) {
 		{
 			name: "Find files using glob patterns",
 			fileSystem: map[string]string{
-				"src/file1.go":       "package main",
-				"src/test_file.go":   "package test",
-				"src/helper_test.go": "package test",
-				"src/README.md":      "# README",
-				"docs/api.md":        "# API",
-				"src/package.json":   "{}",
+				"./src/file1.go":       "package main",
+				"./src/test_file.go":   "package test",
+				"./src/helper_test.go": "package test",
+				"./src/README.md":      "# README",
+				"./docs/api.md":        "# API",
+				"./src/package.json":   "{}",
 			},
 			config: BuildConfig(
-				WithDirectories("src", "docs"),
+				WithDirectories("./src", "./docs"),
 				WithGlobPatterns("helper_test.go", "*.md"),
 			),
 			expectedFiles: []string{
-				"src/helper_test.go",
-				"src/README.md",
-				"docs/api.md",
+				"./src/helper_test.go",
+				"./src/README.md",
+				"./docs/api.md",
 			},
 			unexpectedFiles: []string{
-				"src/file1.go",
-				"src/test_file.go",
-				"src/package.json",
+				"./src/file1.go",
+				"./src/test_file.src/package.json",
 			},
 		},
 	}
