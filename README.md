@@ -30,7 +30,8 @@ dump_dir <directory1> [directory2] ...
 - `-s <directory>, --skip <directory>`: Skip specified directory
 - `-e <extension[s]>, --extension <extension[s]>`: Filter by specific file extensions
 - `--include-ignored`: Include files that would normally be ignored (e.g., those in `.gitignore`)
-- `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to bytes.
+- `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to 500KB.
+- `-g <pattern>`, `--glob <pattern>`: Match files with a [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern
 
 #### 📑 Examples
 
@@ -58,6 +59,11 @@ Set a maximum file size of 1MB:
 ```bash
 dump_dir ./project --max-filesize 1MB
 ```
+Use `--glob` to match files with a glob pattern:
+```bash
+dump_dir ./project --glob "*.go"
+```
+
 
 ## 🔒 Gitignore Behavior
 By default, dump_dir respects your project's .gitignore rules. This means:

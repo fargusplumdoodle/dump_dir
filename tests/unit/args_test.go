@@ -158,6 +158,43 @@ func TestParseArgs(t *testing.T) {
 			expectedConfig: nil,
 			expectedError:  ErrInvalidMaxFileSize{Value: ""},
 		},
+		{
+			name: "Single glob pattern",
+			args: []string{".", "-g", "*.go"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithDirectories("."),
+				WithGlobPatterns("*.go"),
+			),
+		},
+		{
+			name: "Multiple glob patterns",
+			args: []string{".", "-g", "*.go", "-g", "*.md"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithDirectories("."),
+				WithGlobPatterns("*.go", "*.md"),
+			),
+		},
+		{
+			name: "Glob with other arguments",
+			args: []string{".", "-g", "*.go", "-s", "node_modules"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithDirectories("."),
+				WithGlobPatterns("*.go"),
+				WithSkipDirs("node_modules"),
+			),
+		},
+		{
+			name: "Using --glob instead of -g",
+			args: []string{".", "--glob", "*.go"},
+			expectedConfig: BuildConfig(
+				WithAction("dump_dir"),
+				WithDirectories("."),
+				WithGlobPatterns("*.go"),
+			),
+		},
 	}
 
 	for _, tt := range tests {

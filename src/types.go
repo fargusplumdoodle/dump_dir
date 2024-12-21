@@ -27,6 +27,7 @@ type Config struct {
 	SpecificFiles  []string
 	IncludeIgnored bool
 	MaxFileSize    int64
+	GlobPatterns   []string
 }
 
 func (c *Config) AddSkipDir(path string) {
