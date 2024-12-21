@@ -1,4 +1,4 @@
-package tests
+package unit
 
 import (
 	. "github.com/fargusplumdoodle/dump_dir/src"
