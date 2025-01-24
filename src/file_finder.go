@@ -15,44 +15,65 @@ type FileFinder struct {
 }
 
 func NewFileFinder(config Config, fs afero.Fs) *FileFinder {
-	ff := &FileFinder{Config: config, Fs: fs}
-	im, err := NewIgnoreManager(config.IncludeIgnored)
+	im, err := NewIgnoreManager(fs, config.IncludeIgnored, config.SkipDirs)
 	if err != nil {
 		fmt.Printf(boldRed("❌ Error initializing IgnoreManager: %v\n"), err)
 	}
-	ff.IgnoreManager = im
-	return ff
+	return &FileFinder{Config: config, Fs: fs, IgnoreManager: im}
 }
 
 func (ff *FileFinder) DiscoverFiles() []string {
-	allDirs := ff.findAllDirectories()
-	filesToProcess := ff.findMatchingFiles(allDirs)
-	return append(filesToProcess, ff.Config.SpecificFiles...)
-}
+	// Use a map to track unique files
+	uniqueFiles := make(map[string]bool)
 
-func (ff *FileFinder) findAllDirectories() []string {
-	var allDirs []string
+	// Process directories
 	for _, dir := range ff.Config.Directories {
-		ff.walkDirectory(dir, &allDirs)
+		files := ff.findMatchingFilesInDir(dir)
+		for _, file := range files {
+			uniqueFiles[file] = true
+		}
 	}
-	return allDirs
+
+	// Add specific files if they match criteria
+	for _, file := range ff.Config.SpecificFiles {
+		if ff.shouldProcessFile(file) {
+			uniqueFiles[file] = true
+		}
+	}
+
+	// Convert map keys to slice
+	result := make([]string, 0, len(uniqueFiles))
+	for file := range uniqueFiles {
+		result = append(result, file)
+	}
+	return result
 }
 
-func (ff *FileFinder) walkDirectory(dir string, allDirs *[]string) {
-	afero.Walk(ff.Fs, filepath.Clean(dir), func(path string, info os.FileInfo, err error) error {
+func (ff *FileFinder) findMatchingFilesInDir(rootDir string) []string {
+	var matchingFiles []string
+
+	afero.Walk(ff.Fs, filepath.Clean(rootDir), func(path string, info os.FileInfo, err error) error {
+		path = NormalizePath(path)
 		if err != nil {
 			PrintError("accessing path", path, err)
 			return nil
 		}
-		if !info.IsDir() {
+
+		if info.IsDir() {
+			if ff.shouldSkipDirectory(path) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
-		if ff.shouldSkipDirectory(path) {
-			return filepath.SkipDir
+
+		// Process file if it matches criteria
+		if ff.shouldProcessFile(path) {
+			matchingFiles = append(matchingFiles, NormalizePath(path))
 		}
-		*allDirs = append(*allDirs, path)
 		return nil
 	})
+
+	return matchingFiles
 }
 
 func (ff *FileFinder) shouldSkipDirectory(path string) bool {
@@ -72,30 +93,6 @@ func (ff *FileFinder) shouldSkipDirectory(path string) bool {
 func (ff *FileFinder) isSubdirectory(path, parentDir string) bool {
 	normalizedParent := filepath.Clean(parentDir)
 	return path == normalizedParent || strings.HasPrefix(path, normalizedParent+string(os.PathSeparator))
-}
-
-func (ff *FileFinder) findMatchingFiles(dirs []string) []string {
-	var matchingFiles []string
-	for _, dir := range dirs {
-		files, err := afero.ReadDir(ff.Fs, filepath.Clean(dir))
-		if err != nil {
-			PrintError("reading directory", dir, err)
-			continue
-		}
-		for _, file := range files {
-			if !file.IsDir() {
-				ff.processFile(dir, file, &matchingFiles)
-			}
-		}
-	}
-	return matchingFiles
-}
-
-func (ff *FileFinder) processFile(dir string, file os.FileInfo, matchingFiles *[]string) {
-	filePath := filepath.Join(dir, file.Name())
-	if ff.shouldProcessFile(filePath) {
-		*matchingFiles = append(*matchingFiles, filePath)
-	}
 }
 
 func (ff *FileFinder) shouldProcessFile(filePath string) bool {
@@ -121,15 +118,6 @@ func (ff *FileFinder) shouldProcessFile(filePath string) bool {
 
 	// If no glob patterns, fall back to extension matching
 	return ff.matchesExtensions(filepath.Base(filePath))
-}
-
-func (ff *FileFinder) isInSkipDirs(filePath string) bool {
-	for _, skipDir := range ff.Config.SkipDirs {
-		if ff.isSubdirectory(filePath, skipDir) {
-			return true
-		}
-	}
-	return false
 }
 
 func (ff *FileFinder) matchesExtensions(filename string) bool {

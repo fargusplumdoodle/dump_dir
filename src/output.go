@@ -2,7 +2,6 @@ package src
 
 import (
 	"fmt"
-	"github.com/atotto/clipboard"
 	"strings"
 )
 
@@ -19,7 +18,7 @@ func PrintUsage() {
 	fmt.Println("  --include-ignored          Include files that would normally be ignored (e.g., those in .gitignore)")
 	fmt.Println("  -m <size>, --max-filesize <size>  Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB).")
 	fmt.Println("                             If no unit is specified, it defaults to bytes.")
-	fmt.Println("  -g, --glob <pattern>       Only include files matching the glob pattern (e.g., '*.txt', 'test_*.go')")
+	fmt.Println("  -g, --glob <pattern>       Only include file names matching the glob pattern (e.g., '*.txt', 'test_*.go'). Does not support matching directory names or ** patterns.")
 	fmt.Println()
 	fmt.Println(BoldGreen("Examples:"))
 	fmt.Println("  dump_dir js ./project -s ./project/node_modules -s ./project/dist")
@@ -47,7 +46,7 @@ func PrintError(errorType string, filePath string, err error) {
 	fmt.Printf(boldRed("❌ Error %s file %s: %v\n", errorType, filePath, err))
 }
 
-func CopyToClipboard(content string) bool {
+func CopyToClipboard(clipboard ClipboardManager, content string) bool {
 	err := clipboard.WriteAll(content)
 	if err != nil {
 		fmt.Println(boldRed(fmt.Sprintf("❌ Error copying to clipboard: %v", err)))
@@ -70,11 +69,11 @@ func GenerateDetailedOutput(stats Stats) string {
 	return detailedOutput.String()
 }
 
-func PrintDetailedOutput(stats Stats) {
+func PrintDetailedOutput(stats Stats, config RunConfig) {
 	detailedOutput := GenerateDetailedOutput(stats)
 	summary := DisplayStats(stats)
 
-	if CopyToClipboard(detailedOutput) {
+	if CopyToClipboard(config.Clipboard, detailedOutput) {
 		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
 	}
 

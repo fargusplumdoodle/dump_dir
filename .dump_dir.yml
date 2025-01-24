@@ -1,0 +1,19 @@
+---
+# This is the dump_dir config file!
+#
+# All keys are optional! You do not have to specify
+# either an include list or an exclude list.
+
+
+# These files/directories will automatically
+# be included
+#l
+include:
+  - ./README.md
+  - ./prompts
+  - go.mod
+
+
+ignore:
+ - .gitignore
+ - .dump_dir.yml

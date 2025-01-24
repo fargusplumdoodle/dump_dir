@@ -24,13 +24,14 @@ func ValidateArgs(args []string) bool {
 
 func ParseArgs(args []string) (Config, error) {
 	config := Config{
-		Action:        "dump_dir", // Default action
+		Action:        "dump_dir",
 		SkipDirs:      []string{},
 		SpecificFiles: []string{},
 		Directories:   []string{},
-		Extensions:    []string{}, // Empty slice means all extensions
+		Extensions:    []string{},
 		MaxFileSize:   500 * 1024, // Default to 500KB
-		GlobPatterns:  nil,        // Initialize as nil instead of empty slice
+		GlobPatterns:  nil,
+		NoConfig:      false,
 	}
 
 	if len(args) == 0 {
@@ -60,6 +61,8 @@ func ParseArgs(args []string) (Config, error) {
 			skipMode = true
 		case "-e", "--extension":
 			extensionMode = true
+		case "--no-config", "-nc":
+			config.NoConfig = true
 		case "--max-filesize", "-m":
 			if i+1 < len(args) {
 				size, err := parseFileSize(args[i+1])
@@ -75,7 +78,7 @@ func ParseArgs(args []string) (Config, error) {
 			globMode = true
 		default:
 			if skipMode {
-				config.SkipDirs = append(config.SkipDirs, arg)
+				config.AddSkipDir(arg)
 				skipMode = false
 			} else if extensionMode {
 				config.Extensions = append(config.Extensions, strings.Split(arg, ",")...)
@@ -84,15 +87,8 @@ func ParseArgs(args []string) (Config, error) {
 				config.GlobPatterns = append(config.GlobPatterns, arg)
 				globMode = false
 			} else {
-				if fileInfo, err := OsStat(arg); err == nil {
-					if fileInfo.IsDir() {
-						config.Directories = append(config.Directories, arg)
-					} else {
-						config.SpecificFiles = append(config.SpecificFiles, arg)
-					}
-				} else {
-					// If we can't stat it, assume it's a directory
-					config.Directories = append(config.Directories, arg)
+				if err := config.AddIncludePath(arg); err != nil {
+					fmt.Printf("Warning: Could not process path %s: %v\n", arg, err)
 				}
 			}
 		}

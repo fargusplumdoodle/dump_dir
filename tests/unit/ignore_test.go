@@ -1,4 +1,4 @@
-package tests
+package unit
 
 import (
 	. "github.com/fargusplumdoodle/dump_dir/src"
@@ -30,7 +30,7 @@ func TestIgnoreFunctionality(t *testing.T) {
 				WithDirectories("src"),
 			),
 			expectedFiles: []string{
-				"src/file1.go",
+				"./src/file1.go",
 			},
 			unexpectedFiles: []string{
 				".git/config",
@@ -50,11 +50,11 @@ func TestIgnoreFunctionality(t *testing.T) {
 				WithExtensions("go"),
 			),
 			expectedFiles: []string{
-				"src/file1.go",
+				"./src/file1.go",
 			},
 			unexpectedFiles: []string{
-				"src/file2.log",
-				"build/output.txt",
+				"./src/file2.log",
+				"./build/output.txt",
 			},
 		},
 		{
@@ -70,19 +70,19 @@ func TestIgnoreFunctionality(t *testing.T) {
 				WithExtensions("go"),
 			),
 			expectedFiles: []string{
-				"src/file1.go",
+				"./src/file1.go",
 			},
 			unexpectedFiles: []string{
-				"src/file2.tmp",
-				"dist/bundle.js",
+				"./src/file2.tmp",
+				"./dist/bundle.js",
 			},
 		},
 		{
 			name: "Include ignored files when specified",
 			files: []string{
-				"src/file1.go",
-				"src/file2.tmp",
-				"dist/bundle.js",
+				"./src/file1.go",
+				"./src/file2.tmp",
+				"./dist/bundle.js",
 			},
 			localGitignore: "*.tmp\ndist/",
 			config: BuildConfig(
@@ -91,9 +91,9 @@ func TestIgnoreFunctionality(t *testing.T) {
 				WithIncludeIgnored(true),
 			),
 			expectedFiles: []string{
-				"src/file1.go",
-				"src/file2.tmp",
-				"dist/bundle.js",
+				"./src/file1.go",
+				"./src/file2.tmp",
+				"./dist/bundle.js",
 			},
 			unexpectedFiles: []string{},
 		},

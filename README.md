@@ -31,7 +31,8 @@ dump_dir <directory1> [directory2] ...
 - `-e <extension[s]>, --extension <extension[s]>`: Filter by specific file extensions
 - `--include-ignored`: Include files that would normally be ignored (e.g., those in `.gitignore`)
 - `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to 500KB.
-- `-g <pattern>`, `--glob <pattern>`: Match files with a [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern
+- `-g <pattern>`, `--glob <pattern>`: Match file names with a [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern. Does not support matching directory names or ** patterns.
+- `-nc`, `--no-config`: Ignore the `.dump_dir.yml` configuration file
 
 #### 📑 Examples
 
@@ -85,6 +86,34 @@ If any files are skipped for any reason, `dump_dir` will inform you.
 | File too large  | `<FILE TOO LARGE: %d bytes>`    |
 | Empty files     | `<EMPTY FILE>`                  |
 
+## 📝 Configuration File
+
+`dump_dir` will check for a file in your current directory
+called `.dump_dir.yml` which can be used to specify default options. 
+
+Example `.dump_dir.yml` file:
+```yaml
+---
+# Always include these paths
+include:
+  - ./README.md
+  - ./prompts
+
+# Always skip these directories
+# (even if they aren't in your gitignore)
+ignore:
+  - ./dist 
+  - ./vendor
+```
+
+You can check the config file of this repo as another example.
+
+**Purpose**
+
+Including things like coding standards, general architecture patterns,
+and high level explanations of your work can produce dramatically
+better results with LLMs.
+
 
 ## 🛠️ Installation
 
@@ -110,6 +139,7 @@ For Windows users, please download the latest release from the GitHub Releases p
 ## 💡 Tips for LLM Development
 
 - 📁 Use `dump_dir` to quickly gather context from multiple project files
+- 📚 Include documentation in your prompts
 - 🧠 Paste the copied content directly into your LLM conversation
 - 🔄 Easily update context by re-running `dump_dir` with different parameters
 
