@@ -6,40 +6,62 @@ import (
 )
 
 func PrintUsage() {
-	fmt.Println()
-	fmt.Println(boldCyan("Usage:"))
-	fmt.Println("  dump_dir [options] <file_extension1> [,<file_extension2>,...] <directory1> [directory2] [...other options]")
-	fmt.Println("  Use 'any' as file_extension to match all files")
-	fmt.Println()
-	fmt.Println(boldCyan("Options:"))
-	fmt.Println("  -h, --help                 Display this help information")
-	fmt.Println("  -v, --version              Display the version of dump_dir")
-	fmt.Println("  -s <directory>             Skip specified directory")
-	fmt.Println("  --include-ignored          Include files that would normally be ignored (e.g., those in .gitignore)")
-	fmt.Println("  -m <size>, --max-filesize <size>  Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB).")
-	fmt.Println("                             If no unit is specified, it defaults to bytes.")
-	fmt.Println("  -g, --glob <pattern>       Only include file names matching the glob pattern (e.g., '*.txt', 'test_*.go'). Does not support matching directory names or ** patterns.")
-	fmt.Println()
-	fmt.Println(BoldGreen("Examples:"))
-	fmt.Println("  dump_dir js ./project -s ./project/node_modules -s ./project/dist")
-	fmt.Println("  dump_dir any ./project")
-	fmt.Println("  dump_dir go,js,py ./project")
-	fmt.Println("  dump_dir any ./README.md ./main.go")
-	fmt.Println("  dump_dir any ./project --include-ignored")
-	fmt.Println("  dump_dir go ./project --max-filesize 1MB")
-	fmt.Println("  dump_dir any ./project -g '*.txt' -g 'test_*.go'")
-	fmt.Println("  dump_dir any ./project --glob '*.md'")
-	fmt.Println()
-	fmt.Println(boldMagenta("Description:"))
-	fmt.Println("  This will search for files with the specified extensions (or all files if 'any' is used)")
-	fmt.Println("  in the given directories, excluding any specified directories.")
-	fmt.Println("  Multiple file extensions can be specified by separating them with commas.")
-	fmt.Println("  Use --include-ignored to include files that would normally be ignored (e.g., those in .gitignore).")
-	fmt.Println("  The tool respects .gitignore rules by default and ignores common version control directories.")
-	fmt.Println("  You can set a maximum file size to process using the --max-filesize option.")
-	fmt.Println()
-	fmt.Println("  More documentation at: https://github.com/fargusplumdoodle/dump_dir")
-	fmt.Println()
+	usage := `
+` + boldCyan("Usage:") + `
+  dump_dir [options] <path1> [path2] [options] ...
+
+` + boldCyan("Options:") + `
+  -h, --help                 Display this help information
+  -v, --version              Display the version of dump_dir
+  -s <directory>, --skip <directory>
+                             Skip specified directory
+  -e <extension[s]>, --extension <extension[s]>
+                             Filter by specific file extensions
+  --include-ignored          Include files that would normally be ignored
+                             (e.g., those in .gitignore)
+  -m <size>, --max-filesize <size>
+                             Specify the maximum file size to process.
+                             You can use units like B, KB, or MB
+                             (e.g., 500KB, 2MB). If no unit is specified,
+                             it defaults to 500KB.
+  -g <pattern>, --glob <pattern>
+                             Match file names with a glob pattern.
+                             Does not support matching directory names
+                             or ** patterns.
+  -nc, --no-config           Ignore the .dump_dir.yml configuration file
+
+` + BoldGreen("Common examples:") + `
+  # Grab everything from ./project
+  dump_dir ./project
+
+  # Grab everything from ./src, but skip the csv_data directory
+  dump_dir ./src -s ./src/csv_data  
+
+  # Grab all of the .js files from the current directory 
+  # skipping contents of the dist directory
+  dump_dir . -e js --skip ./dist
+
+  # Grab EVERYTHING including what is in your gitignore
+  dump_dir . --include-ignored
+
+  # Quickly grab one thing, ignoring your auto-included files
+  dump_dir ./next.conf.ts -nc
+
+  # Grab all of the test files
+  dump_dir ./project --glob "*_test.go"
+
+` + boldMagenta("Description:") + `
+  dump_dir will find files based on your parameters
+  and put their contents into your clipboard in a way
+  that is easy for Large Language Models to understand.
+
+  You can make a .dump_dir.yml config file to automatically
+  include/exclude paths.
+
+  More documentation at: https://github.com/fargusplumdoodle/dump_dir
+
+`
+	fmt.Print(usage)
 }
 
 func PrintError(errorType string, filePath string, err error) {
