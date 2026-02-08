@@ -2,6 +2,9 @@
 
 Copy a bunch of files into your clipboard to provide context for LLMs
 
+  > [!WARNING]
+  > **This project is deprecated.** Your message here.
+
 ## 🌟 Functionality
 
 - 🔍 Search for files with specific extensions or all files
