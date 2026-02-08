@@ -29,6 +29,7 @@ type Config struct {
 	MaxFileSize    int64
 	GlobPatterns   []string
 	NoConfig       bool
+	Raw            bool
 }
 
 func (c *Config) AddSkipDir(path string) {

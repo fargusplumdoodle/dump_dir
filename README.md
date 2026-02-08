@@ -51,6 +51,7 @@ dump_dir <directory1> [directory2] ...
 - `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to 500KB.
 - `-g <pattern>`, `--glob <pattern>`: Match file names with a [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern. Does not support matching directory names or ** patterns.
 - `-nc`, `--no-config`: Ignore the `.dump_dir.yml` configuration file
+- `-r`, `--raw`: Output raw file contents without `START FILE:`/`END FILE:` markers
 
 #### 📑 Examples
 
@@ -81,6 +82,10 @@ dump_dir ./project --max-filesize 1MB
 Use `--glob` to match files with a glob pattern:
 ```bash
 dump_dir ./project --glob "*.go"
+```
+Get raw file contents without markers:
+```bash
+dump_dir ./project --raw
 ```
 
 
