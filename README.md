@@ -2,8 +2,23 @@
 
 Copy a bunch of files into your clipboard to provide context for LLMs
 
-  > [!WARNING]
-  > **This project is deprecated.** Your message here.
+> [!WARNING]
+> **Read this before you start using.** 
+> 
+> This project was from an earlier era of LLM development 
+> which mostly comprised of copying files and pasting them into
+> the ChatGPT or Claude interface. It was REALLY handy for
+> a year or so.
+> 
+> Now the landscape has changed dramatically and this is no 
+> longer an optimal flow.
+> 
+> That and this was my first attempt at learning go so its 
+> pretty rough in here. 
+> 
+> That said it is still sometimes useful from the CLI to just
+> grab a bunch of files at once and paste them somewhere.
+> (e.g. taking markdown files and pasting them in Notion)
 
 ## 🌟 Functionality
 
