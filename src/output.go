@@ -29,6 +29,7 @@ func PrintUsage() {
                              Does not support matching directory names
                              or ** patterns.
   -nc, --no-config           Ignore the .dump_dir.yml configuration file
+  -r, --raw                  Output raw file contents without START/END markers
 
 ` + BoldGreen("Common examples:") + `
   # Grab everything from ./project
@@ -77,25 +78,28 @@ func CopyToClipboard(clipboard ClipboardManager, content string) bool {
 	return true
 }
 
-func FormatFileContent(path, contents string) string {
+func FormatFileContent(path, contents string, raw bool) string {
+	if raw {
+		return contents + "\n"
+	}
 	return fmt.Sprintf("START FILE: %s\n%s\nEND FILE: %s\n\n", path, contents, path)
 }
 
-func GenerateDetailedOutput(stats Stats) string {
+func GenerateDetailedOutput(stats Stats, raw bool) string {
 	var detailedOutput strings.Builder
 
 	for _, fileInfo := range stats.ProcessedFiles {
-		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents))
+		detailedOutput.WriteString(FormatFileContent(fileInfo.Path, fileInfo.Contents, raw))
 	}
 
 	return detailedOutput.String()
 }
 
-func PrintDetailedOutput(stats Stats, config RunConfig) {
-	detailedOutput := GenerateDetailedOutput(stats)
+func PrintDetailedOutput(stats Stats, runConfig RunConfig, config Config) {
+	detailedOutput := GenerateDetailedOutput(stats, config.Raw)
 	summary := DisplayStats(stats)
 
-	if CopyToClipboard(config.Clipboard, detailedOutput) {
+	if CopyToClipboard(runConfig.Clipboard, detailedOutput) {
 		summary += BoldGreen("✅ File contents have been copied to clipboard.\n")
 	}
 

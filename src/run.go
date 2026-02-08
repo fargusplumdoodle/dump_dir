@@ -41,7 +41,7 @@ func performDumpDir(cliArgumentsConfig Config, runConfig RunConfig) error {
 	filePaths := fileFinder.DiscoverFiles()
 	processedFiles := fileProcessor.ProcessFiles(filePaths)
 	stats := CalculateStats(processedFiles)
-	PrintDetailedOutput(stats, runConfig)
+	PrintDetailedOutput(stats, runConfig, config)
 	return nil
 }
 

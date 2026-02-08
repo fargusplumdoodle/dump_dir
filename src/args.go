@@ -63,6 +63,8 @@ func ParseArgs(args []string) (Config, error) {
 			extensionMode = true
 		case "--no-config", "-nc":
 			config.NoConfig = true
+		case "--raw", "-r":
+			config.Raw = true
 		case "--max-filesize", "-m":
 			if i+1 < len(args) {
 				size, err := parseFileSize(args[i+1])

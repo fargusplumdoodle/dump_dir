@@ -2,6 +2,24 @@
 
 Copy a bunch of files into your clipboard to provide context for LLMs
 
+> [!WARNING]
+> **Read this before you start using.** 
+> 
+> This project was from an earlier era of LLM development 
+> which mostly comprised of copying files and pasting them into
+> the ChatGPT or Claude interface. It was REALLY handy for
+> a year or so.
+> 
+> Now the landscape has changed dramatically and this is no 
+> longer an optimal flow.
+> 
+> That and this was my first attempt at learning go so its 
+> pretty rough in here. 
+> 
+> That said it is still sometimes useful from the CLI to just
+> grab a bunch of files at once and paste them somewhere.
+> (e.g. taking markdown files and pasting them in Notion)
+
 ## 🌟 Functionality
 
 - 🔍 Search for files with specific extensions or all files
@@ -33,6 +51,7 @@ dump_dir <directory1> [directory2] ...
 - `-m <size>`, `--max-filesize <size>`: Specify the maximum file size to process. You can use units like B, KB, or MB (e.g., 500KB, 2MB). If no unit is specified, it defaults to 500KB.
 - `-g <pattern>`, `--glob <pattern>`: Match file names with a [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern. Does not support matching directory names or ** patterns.
 - `-nc`, `--no-config`: Ignore the `.dump_dir.yml` configuration file
+- `-r`, `--raw`: Output raw file contents without `START FILE:`/`END FILE:` markers
 
 #### 📑 Examples
 
@@ -63,6 +82,10 @@ dump_dir ./project --max-filesize 1MB
 Use `--glob` to match files with a glob pattern:
 ```bash
 dump_dir ./project --glob "*.go"
+```
+Get raw file contents without markers:
+```bash
+dump_dir ./project --raw
 ```
 
 
